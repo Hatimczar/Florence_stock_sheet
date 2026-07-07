@@ -6,6 +6,7 @@ import { Customer, CategoryMarkup } from './customers';
 export interface CustomerLookupResult {
   partNumber: string;
   description: string;
+  category: string;
   stock: number;
   price: number;
 }
@@ -16,34 +17,50 @@ export function applyMarkup(cost: number, markup: Pick<CategoryMarkup, 'markupTy
 }
 
 /**
- * Looks up a part number for a customer-facing request. Only ever returns
- * partNumber, description, stock, and the final marked-up price — never the
- * underlying cost, the category, or the customer's markup rate.
- *
- * If the part's category isn't in the customer's enabled category list, this
- * returns null (identical to "not found") so customers can't discover
- * categories or parts they don't have access to.
+ * Computes every part visible to this customer — i.e. every row that has both
+ * stock and cost data, and whose category is in the customer's enabled list —
+ * with markup already applied. Only partNumber/description/category/stock/price
+ * ever come out of this; cost and the customer's markup rate never do.
+ */
+async function getVisiblePartsForCustomer(customer: Pick<Customer, 'categoryMarkups'>): Promise<CustomerLookupResult[]> {
+  const [stock, price] = await Promise.all([getStoredList('stock'), getStoredList('price')]);
+  if (!stock || !price) return [];
+
+  const merged = mergeStockAndPrice(stock.file.rows, stock.mapping, price.file.rows, price.mapping);
+  const results: CustomerLookupResult[] = [];
+
+  for (const row of merged.rows) {
+    if (row.stock === null || row.price === null) continue;
+    const markup = customer.categoryMarkups.find((m) => m.category === row.category);
+    if (!markup) continue;
+    results.push({
+      partNumber: row.partNumber,
+      description: row.description,
+      category: row.category,
+      stock: row.stock,
+      price: applyMarkup(row.price, markup),
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Looks up a single part number for a customer-facing request. Returns null
+ * (identical whether the part doesn't exist or its category just isn't
+ * enabled for this customer) so customers can't discover what they don't
+ * have access to.
  */
 export async function lookupPartNumberForCustomer(
   rawPartNumber: string,
   customer: Pick<Customer, 'categoryMarkups'>
 ): Promise<CustomerLookupResult | null> {
-  const [stock, price] = await Promise.all([getStoredList('stock'), getStoredList('price')]);
-  if (!stock || !price) return null;
-
-  const merged = mergeStockAndPrice(stock.file.rows, stock.mapping, price.file.rows, price.mapping);
   const target = normalizePartNumber(rawPartNumber);
-  const row = merged.rows.find((r) => r.partNumber === target);
-  if (!row) return null;
-  if (row.stock === null || row.price === null) return null; // don't quote parts missing cost or stock data
+  const visible = await getVisiblePartsForCustomer(customer);
+  return visible.find((r) => r.partNumber === target) ?? null;
+}
 
-  const markup = customer.categoryMarkups.find((m) => m.category === row.category);
-  if (!markup) return null; // category not enabled for this customer
-
-  return {
-    partNumber: row.partNumber,
-    description: row.description,
-    stock: row.stock,
-    price: applyMarkup(row.price, markup),
-  };
+/** Every part this customer is allowed to browse, for the portal's list view. */
+export async function browsePartsForCustomer(customer: Pick<Customer, 'categoryMarkups'>): Promise<CustomerLookupResult[]> {
+  return getVisiblePartsForCustomer(customer);
 }
