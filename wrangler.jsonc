@@ -13,5 +13,11 @@
 			"binding": "WORKER_SELF_REFERENCE",
 			"service": "florence-stock-sheet"
 		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "STOCK_SHEET_KV",
+			"id": "40e606db6541491cadc1a8d7a4c99137"
+		}
 	]
 }

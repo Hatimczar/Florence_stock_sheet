@@ -2,15 +2,10 @@
 
 import { useRef, useState } from 'react';
 import { Upload, RefreshCw, X, CheckCircle2 } from 'lucide-react';
-import { parseFile, ParsedFile, guessPartNumberColumn, guessDescriptionColumn } from '@/lib/parseFile';
+import { parseFile, guessPartNumberColumn, guessDescriptionColumn } from '@/lib/parseFile';
 import { ListMapping } from '@/lib/merge';
+import { StoredList } from '@/lib/api';
 import { Card, SectionHeader, Field, SelectInput, Badge } from './ui';
-
-interface ListState {
-  file: ParsedFile | null;
-  mapping: ListMapping | null;
-  uploadedAt: string | null;
-}
 
 export function UploadCard({
   step,
@@ -26,10 +21,10 @@ export function UploadCard({
   title: string;
   valueLabel: string;
   valueGuess: (headers: string[]) => string | null;
-  listState: ListState;
-  onFileParsed: (file: ParsedFile, mapping: ListMapping) => void;
-  onMappingChange: (mapping: Partial<ListMapping>) => void;
-  onClear: () => void;
+  listState: StoredList | null;
+  onFileParsed: (file: StoredList['file'], mapping: ListMapping) => Promise<void>;
+  onMappingChange: (mapping: Partial<ListMapping>) => Promise<void>;
+  onClear: () => Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +37,6 @@ export function UploadCard({
       const parsed = await parseFile(file);
       if (parsed.headers.length === 0) {
         setError('No columns found in this file — is it empty?');
-        setBusy(false);
         return;
       }
       const mapping: ListMapping = {
@@ -50,11 +44,20 @@ export function UploadCard({
         valueCol: valueGuess(parsed.headers) || parsed.headers[1] || parsed.headers[0],
         descriptionCol: guessDescriptionColumn(parsed.headers),
       };
-      onFileParsed(parsed, mapping);
+      await onFileParsed(parsed, mapping);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not read this file.');
+      setError(e instanceof Error ? e.message : 'Could not read or upload this file.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleMappingChange = async (patch: Partial<ListMapping>) => {
+    setError(null);
+    try {
+      await onMappingChange(patch);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save mapping change.');
     }
   };
 
@@ -63,9 +66,13 @@ export function UploadCard({
 
   return (
     <Card>
-      <SectionHeader step={step} title={title} subtitle={listState.uploadedAt ? `Updated ${new Date(listState.uploadedAt).toLocaleString()}` : 'No file uploaded yet'} />
+      <SectionHeader
+        step={step}
+        title={title}
+        subtitle={listState ? `Updated ${new Date(listState.uploadedAt).toLocaleString()}` : 'No file uploaded yet'}
+      />
 
-      {!listState.file ? (
+      {!listState ? (
         <div
           className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface-muted p-8 text-center"
           onClick={() => inputRef.current?.click()}
@@ -77,7 +84,7 @@ export function UploadCard({
           }}
         >
           <Upload size={26} className="mb-2 text-muted" />
-          <p className="text-sm text-foreground">{busy ? 'Reading file…' : 'Drag & drop, or click to choose a file'}</p>
+          <p className="text-sm text-foreground">{busy ? 'Uploading…' : 'Drag & drop, or click to choose a file'}</p>
           <p className="mt-1 text-xs text-muted">.xlsx, .xls, or .csv</p>
           <input
             ref={inputRef}
@@ -97,6 +104,7 @@ export function UploadCard({
               <CheckCircle2 size={16} className="text-profit" />
               <span className="font-medium">{listState.file.fileName}</span>
               <Badge tone="accent">{listState.file.rows.length} rows</Badge>
+              {busy && <span className="text-xs text-muted">Uploading…</span>}
             </div>
             <div className="flex gap-2">
               <button
@@ -105,7 +113,7 @@ export function UploadCard({
               >
                 <RefreshCw size={13} /> Replace
               </button>
-              <button onClick={onClear} className="rounded-lg border border-border p-1 text-xs hover:bg-surface">
+              <button onClick={() => onClear()} className="rounded-lg border border-border p-1 text-xs hover:bg-surface">
                 <X size={13} />
               </button>
               <input
@@ -121,31 +129,29 @@ export function UploadCard({
             </div>
           </div>
 
-          {listState.mapping && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Field label="Part Number Column">
-                <SelectInput
-                  value={listState.mapping.partNumberCol}
-                  onValueChange={(v) => onMappingChange({ partNumberCol: v })}
-                  options={columnOptions(listState.file.headers)}
-                />
-              </Field>
-              <Field label={`${valueLabel} Column`}>
-                <SelectInput
-                  value={listState.mapping.valueCol}
-                  onValueChange={(v) => onMappingChange({ valueCol: v })}
-                  options={columnOptions(listState.file.headers)}
-                />
-              </Field>
-              <Field label="Description Column (optional)">
-                <SelectInput
-                  value={listState.mapping.descriptionCol || ''}
-                  onValueChange={(v) => onMappingChange({ descriptionCol: v || null })}
-                  options={[noneOption, ...columnOptions(listState.file.headers)]}
-                />
-              </Field>
-            </div>
-          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field label="Part Number Column">
+              <SelectInput
+                value={listState.mapping.partNumberCol}
+                onValueChange={(v) => handleMappingChange({ partNumberCol: v })}
+                options={columnOptions(listState.file.headers)}
+              />
+            </Field>
+            <Field label={`${valueLabel} Column`}>
+              <SelectInput
+                value={listState.mapping.valueCol}
+                onValueChange={(v) => handleMappingChange({ valueCol: v })}
+                options={columnOptions(listState.file.headers)}
+              />
+            </Field>
+            <Field label="Description Column (optional)">
+              <SelectInput
+                value={listState.mapping.descriptionCol || ''}
+                onValueChange={(v) => handleMappingChange({ descriptionCol: v || null })}
+                options={[noneOption, ...columnOptions(listState.file.headers)]}
+              />
+            </Field>
+          </div>
         </div>
       )}
 
