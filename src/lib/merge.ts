@@ -79,12 +79,15 @@ export function mergeStockAndPrice(
   const stockMap = aggregate(stockRows, stockMapping, 'sum');
   const priceMap = aggregate(priceRows, priceMapping, 'last');
 
-  const allPartNumbers = new Set<string>([...stockMap.keys(), ...priceMap.keys()]);
+  // Preserve Stock File order: stock rows first (in their original sequence),
+  // then any price-only part numbers appended in their price-file sequence.
+  const orderedPartNumbers = [
+    ...stockMap.keys(),
+    ...Array.from(priceMap.keys()).filter((partNumber) => !stockMap.has(partNumber)),
+  ];
   const duplicatePartNumbers: string[] = [];
 
-  const rows: MergedRow[] = Array.from(allPartNumbers)
-    .sort()
-    .map((partNumber) => {
+  const rows: MergedRow[] = orderedPartNumbers.map((partNumber) => {
       const stockEntry = stockMap.get(partNumber);
       const priceEntry = priceMap.get(partNumber);
 

@@ -1,16 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Download, Search, AlertTriangle } from 'lucide-react';
+import { Download, Search, AlertTriangle, ListRestart } from 'lucide-react';
 import { MergeResult, MergedRow } from '@/lib/merge';
 import { downloadMergedCSV } from '@/lib/export';
 import { Card, SectionHeader, Badge, StatCard } from './ui';
 
-type SortKey = 'partNumber' | 'stock' | 'price';
+type SortKey = 'fileOrder' | 'partNumber' | 'stock' | 'price';
 
 export function MergedTable({ result }: { result: MergeResult }) {
   const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('partNumber');
+  const [sortKey, setSortKey] = useState<SortKey>('fileOrder');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const filtered = useMemo(() => {
@@ -19,6 +19,7 @@ export function MergedTable({ result }: { result: MergeResult }) {
     if (q) {
       rows = rows.filter((r) => r.partNumber.includes(q) || r.description.toUpperCase().includes(q));
     }
+    if (sortKey === 'fileOrder') return rows;
     const sorted = [...rows].sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'partNumber') cmp = a.partNumber.localeCompare(b.partNumber);
@@ -29,7 +30,7 @@ export function MergedTable({ result }: { result: MergeResult }) {
     return sorted;
   }, [result.rows, search, sortKey, sortDir]);
 
-  const toggleSort = (key: SortKey) => {
+  const toggleSort = (key: Exclude<SortKey, 'fileOrder'>) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else {
       setSortKey(key);
@@ -74,14 +75,24 @@ export function MergedTable({ result }: { result: MergeResult }) {
         </div>
       )}
 
-      <div className="relative mb-3">
-        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search part number or description…"
-          className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-        />
+      <div className="mb-3 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search part number or description…"
+            className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          />
+        </div>
+        {sortKey !== 'fileOrder' && (
+          <button
+            onClick={() => setSortKey('fileOrder')}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:bg-surface-muted"
+          >
+            <ListRestart size={14} /> Stock File Order
+          </button>
+        )}
       </div>
 
       <div className="max-h-[520px] overflow-auto rounded-xl border border-border">
