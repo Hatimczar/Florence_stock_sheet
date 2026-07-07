@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCustomer, listPublicCustomers } from '@/lib/customers';
-import { MarkupType } from '@/lib/customers';
+import { createCustomer, listPublicCustomers, CategoryMarkup } from '@/lib/customers';
 import { requireAdmin } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -19,12 +18,11 @@ export async function POST(req: NextRequest) {
     email: string;
     name: string;
     password: string;
-    markupType: MarkupType;
-    markupValue: number;
+    categoryMarkups: CategoryMarkup[];
   };
 
-  if (!body.email || !body.password || !body.markupType || typeof body.markupValue !== 'number') {
-    return NextResponse.json({ error: 'email, password, markupType, and markupValue are required' }, { status: 400 });
+  if (!body.email || !body.password || !Array.isArray(body.categoryMarkups)) {
+    return NextResponse.json({ error: 'email, password, and categoryMarkups are required' }, { status: 400 });
   }
 
   try {

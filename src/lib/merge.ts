@@ -1,14 +1,18 @@
 import { normalizePartNumber } from './parseFile';
 
+export const UNCATEGORIZED = 'Uncategorized';
+
 export interface ListMapping {
   partNumberCol: string;
   valueCol: string;
   descriptionCol?: string | null;
+  categoryCol?: string | null;
 }
 
 export interface MergedRow {
   partNumber: string;
   description: string;
+  category: string;
   stock: number | null;
   price: number | null;
   stockDuplicateCount: number;
@@ -36,6 +40,7 @@ function parseNumeric(raw: string | number | undefined): number | null {
 interface Aggregated {
   value: number;
   description: string;
+  category: string;
   occurrences: number;
 }
 
@@ -53,15 +58,17 @@ function aggregate(
 
     const value = parseNumeric(row[mapping.valueCol]);
     const description = mapping.descriptionCol ? String(row[mapping.descriptionCol] ?? '').trim() : '';
+    const category = mapping.categoryCol ? String(row[mapping.categoryCol] ?? '').trim() : '';
 
     const existing = map.get(partNumber);
     if (!existing) {
-      map.set(partNumber, { value: value ?? 0, description, occurrences: 1 });
+      map.set(partNumber, { value: value ?? 0, description, category, occurrences: 1 });
       continue;
     }
 
     existing.occurrences += 1;
     if (!existing.description && description) existing.description = description;
+    if (!existing.category && category) existing.category = category;
     if (value !== null) {
       existing.value = combine === 'sum' ? existing.value + value : value;
     }
@@ -88,25 +95,26 @@ export function mergeStockAndPrice(
   const duplicatePartNumbers: string[] = [];
 
   const rows: MergedRow[] = orderedPartNumbers.map((partNumber) => {
-      const stockEntry = stockMap.get(partNumber);
-      const priceEntry = priceMap.get(partNumber);
+    const stockEntry = stockMap.get(partNumber);
+    const priceEntry = priceMap.get(partNumber);
 
-      if ((stockEntry && stockEntry.occurrences > 1) || (priceEntry && priceEntry.occurrences > 1)) {
-        duplicatePartNumbers.push(partNumber);
-      }
+    if ((stockEntry && stockEntry.occurrences > 1) || (priceEntry && priceEntry.occurrences > 1)) {
+      duplicatePartNumbers.push(partNumber);
+    }
 
-      const status: MergedRow['status'] = !stockEntry ? 'missing-stock' : !priceEntry ? 'missing-price' : 'matched';
+    const status: MergedRow['status'] = !stockEntry ? 'missing-stock' : !priceEntry ? 'missing-price' : 'matched';
 
-      return {
-        partNumber,
-        description: stockEntry?.description || priceEntry?.description || '',
-        stock: stockEntry ? stockEntry.value : null,
-        price: priceEntry ? priceEntry.value : null,
-        stockDuplicateCount: stockEntry?.occurrences ?? 0,
-        priceDuplicateCount: priceEntry?.occurrences ?? 0,
-        status,
-      };
-    });
+    return {
+      partNumber,
+      description: stockEntry?.description || priceEntry?.description || '',
+      category: stockEntry?.category || priceEntry?.category || UNCATEGORIZED,
+      stock: stockEntry ? stockEntry.value : null,
+      price: priceEntry ? priceEntry.value : null,
+      stockDuplicateCount: stockEntry?.occurrences ?? 0,
+      priceDuplicateCount: priceEntry?.occurrences ?? 0,
+      status,
+    };
+  });
 
   return {
     rows,
@@ -115,4 +123,9 @@ export function mergeStockAndPrice(
     totalMissingPrice: rows.filter((r) => r.status === 'missing-price').length,
     duplicatePartNumbers,
   };
+}
+
+export function distinctCategories(result: MergeResult): string[] {
+  const set = new Set(result.rows.map((r) => r.category));
+  return Array.from(set).sort();
 }

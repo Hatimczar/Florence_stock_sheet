@@ -2,26 +2,28 @@
 
 import { useState } from 'react';
 import { Pencil, Trash2, Check, X } from 'lucide-react';
-import { PublicCustomer, MarkupType } from '@/lib/customers';
+import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
 import { updateCustomerApi, deleteCustomerApi } from '@/lib/customerApi';
-import { Field, TextInput, NumberInput, SelectInput, Badge } from './ui';
+import { Field, TextInput, Badge } from './ui';
+import { CategoryMarkupEditor } from './CategoryMarkupEditor';
 
-function formatMarkup(type: MarkupType, value: number): string {
-  return type === 'percent' ? `${(value * 100).toFixed(1)}%` : `AED ${value.toFixed(2)} flat`;
+function formatMarkup(m: CategoryMarkup): string {
+  return m.markupType === 'percent' ? `${(m.markupValue * 100).toFixed(1)}%` : `AED ${m.markupValue.toFixed(2)} flat`;
 }
 
 export function CustomerRow({
   customer,
+  categories,
   onUpdated,
   onDeleted,
 }: {
   customer: PublicCustomer;
+  categories: string[];
   onUpdated: (c: PublicCustomer) => void;
   onDeleted: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [markupType, setMarkupType] = useState<MarkupType>(customer.markupType);
-  const [markupValue, setMarkupValue] = useState(customer.markupType === 'percent' ? customer.markupValue * 100 : customer.markupValue);
+  const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>(customer.categoryMarkups);
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +33,7 @@ export function CustomerRow({
     setError(null);
     try {
       const updated = await updateCustomerApi(customer.id, {
-        markupType,
-        markupValue: markupType === 'percent' ? markupValue / 100 : markupValue,
+        categoryMarkups,
         ...(newPassword ? { password: newPassword } : {}),
       });
       onUpdated(updated);
@@ -55,9 +56,17 @@ export function CustomerRow({
     return (
       <div className="flex items-center justify-between gap-3 border-t border-border/60 py-3 first:border-0">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium">{customer.name || customer.email}</span>
-            <Badge tone="accent">{formatMarkup(customer.markupType, customer.markupValue)}</Badge>
+            {customer.categoryMarkups.length === 0 ? (
+              <Badge tone="warn">No categories enabled</Badge>
+            ) : (
+              customer.categoryMarkups.map((m) => (
+                <Badge key={m.category} tone="accent">
+                  {m.category}: {formatMarkup(m)}
+                </Badge>
+              ))
+            )}
           </div>
           <div className="mt-0.5 text-xs text-muted">{customer.email}</div>
         </div>
@@ -76,20 +85,7 @@ export function CustomerRow({
   return (
     <div className="border-t border-border/60 py-3 first:border-0">
       <div className="mb-2 text-sm font-medium">{customer.email}</div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Field label="Markup Type">
-          <SelectInput
-            value={markupType}
-            onValueChange={(v) => setMarkupType(v as MarkupType)}
-            options={[
-              { value: 'percent', label: 'Percentage' },
-              { value: 'fixed', label: 'Fixed Amount (AED)' },
-            ]}
-          />
-        </Field>
-        <Field label={markupType === 'percent' ? 'Markup %' : 'Markup (AED)'}>
-          <NumberInput value={markupValue} onValueChange={setMarkupValue} />
-        </Field>
+      <div className="mb-3">
         <Field label="New Password (optional)">
           <TextInput
             type="password"
@@ -99,6 +95,8 @@ export function CustomerRow({
           />
         </Field>
       </div>
+      <span className="mb-1.5 block text-xs font-medium text-muted">Categories & markup</span>
+      <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
       {error && <p className="mt-2 text-xs text-loss">{error}</p>}
       <div className="mt-3 flex gap-2">
         <button

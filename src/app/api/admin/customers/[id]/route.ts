@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteCustomer, updateCustomer } from '@/lib/customers';
-import { MarkupType } from '@/lib/customers';
+import { deleteCustomer, updateCustomer, CategoryMarkup } from '@/lib/customers';
 import { requireAdmin } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = (await req.json()) as {
     name?: string;
     password?: string;
-    markupType?: MarkupType;
-    markupValue?: number;
+    categoryMarkups?: CategoryMarkup[];
   };
 
   const customer = await updateCustomer(id, body);

@@ -1,4 +1,4 @@
-import { MarkupType, PublicCustomer } from './customers';
+import { PublicCustomer, CategoryMarkup } from './customers';
 
 export async function fetchCustomers(): Promise<PublicCustomer[]> {
   const res = await fetch('/api/admin/customers', { cache: 'no-store' });
@@ -7,12 +7,18 @@ export async function fetchCustomers(): Promise<PublicCustomer[]> {
   return data.customers;
 }
 
+export async function fetchCategories(): Promise<string[]> {
+  const res = await fetch('/api/admin/categories', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to load categories');
+  const data = (await res.json()) as { categories: string[] };
+  return data.categories;
+}
+
 export async function createCustomerApi(params: {
   email: string;
   name: string;
   password: string;
-  markupType: MarkupType;
-  markupValue: number;
+  categoryMarkups: CategoryMarkup[];
 }): Promise<PublicCustomer> {
   const res = await fetch('/api/admin/customers', {
     method: 'POST',
@@ -26,7 +32,7 @@ export async function createCustomerApi(params: {
 
 export async function updateCustomerApi(
   id: string,
-  patch: { name?: string; password?: string; markupType?: MarkupType; markupValue?: number }
+  patch: { name?: string; password?: string; categoryMarkups?: CategoryMarkup[] }
 ): Promise<PublicCustomer> {
   const res = await fetch(`/api/admin/customers/${id}`, {
     method: 'PATCH',

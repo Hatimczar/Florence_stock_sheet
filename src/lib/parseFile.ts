@@ -45,6 +45,7 @@ const PART_NUMBER_GUESSES = ['part number', 'part_number', 'partnumber', 'sku', 
 const STOCK_GUESSES = ['stock', 'qty', 'quantity', 'available', 'in stock', 'available qty', 'available quantity', 'stock qty', 'stock quantity', 'on hand'];
 const PRICE_GUESSES = ['price', 'cost', 'unit price', 'rate', 'sell price', 'selling price', 'cost price'];
 const DESCRIPTION_GUESSES = ['description', 'name', 'title', 'product name', 'product', 'item description', 'item name'];
+const CATEGORY_GUESSES = ['category', 'product category', 'category group', 'product type', 'type', 'group', 'department'];
 
 export function guessColumn(headers: string[], guesses: string[]): string | null {
   const lower = headers.map((h) => h.toLowerCase().trim());
@@ -71,6 +72,9 @@ export function guessPriceColumn(headers: string[]): string | null {
 }
 export function guessDescriptionColumn(headers: string[]): string | null {
   return guessColumn(headers, DESCRIPTION_GUESSES);
+}
+export function guessCategoryColumn(headers: string[]): string | null {
+  return guessColumn(headers, CATEGORY_GUESSES);
 }
 
 export function normalizePartNumber(raw: string | number): string {

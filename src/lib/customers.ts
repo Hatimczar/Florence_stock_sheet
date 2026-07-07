@@ -3,13 +3,19 @@ import { hashPassword } from './auth';
 
 export type MarkupType = 'percent' | 'fixed';
 
+export interface CategoryMarkup {
+  category: string;
+  markupType: MarkupType;
+  markupValue: number; // 0.20 for 20% if percent, or AED amount if fixed
+}
+
 export interface Customer {
   id: string;
   email: string;
   name: string;
   passwordHash: string;
-  markupType: MarkupType;
-  markupValue: number; // 0.20 for 20% if percent, or AED amount if fixed
+  // Only categories present here are visible to the customer; each has its own markup.
+  categoryMarkups: CategoryMarkup[];
   createdAt: string;
 }
 
@@ -54,8 +60,7 @@ export async function createCustomer(params: {
   email: string;
   name: string;
   password: string;
-  markupType: MarkupType;
-  markupValue: number;
+  categoryMarkups: CategoryMarkup[];
 }): Promise<PublicCustomer> {
   const customers = await listCustomers();
   const normalizedEmail = params.email.trim().toLowerCase();
@@ -67,8 +72,7 @@ export async function createCustomer(params: {
     email: normalizedEmail,
     name: params.name.trim(),
     passwordHash: await hashPassword(params.password),
-    markupType: params.markupType,
-    markupValue: params.markupValue,
+    categoryMarkups: params.categoryMarkups,
     createdAt: new Date().toISOString(),
   };
   customers.push(customer);
@@ -79,7 +83,7 @@ export async function createCustomer(params: {
 
 export async function updateCustomer(
   id: string,
-  patch: Partial<Pick<Customer, 'name' | 'markupType' | 'markupValue'>> & { password?: string }
+  patch: Partial<Pick<Customer, 'name' | 'categoryMarkups'>> & { password?: string }
 ): Promise<PublicCustomer | null> {
   const customers = await listCustomers();
   const idx = customers.findIndex((c) => c.id === id);
@@ -89,8 +93,7 @@ export async function updateCustomer(
   const updated: Customer = {
     ...existing,
     name: patch.name ?? existing.name,
-    markupType: patch.markupType ?? existing.markupType,
-    markupValue: patch.markupValue ?? existing.markupValue,
+    categoryMarkups: patch.categoryMarkups ?? existing.categoryMarkups,
     passwordHash: patch.password ? await hashPassword(patch.password) : existing.passwordHash,
   };
   customers[idx] = updated;

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Upload, RefreshCw, X, CheckCircle2 } from 'lucide-react';
-import { parseFile, guessPartNumberColumn, guessDescriptionColumn } from '@/lib/parseFile';
+import { parseFile, guessPartNumberColumn, guessDescriptionColumn, guessCategoryColumn } from '@/lib/parseFile';
 import { ListMapping } from '@/lib/merge';
 import { StoredList } from '@/lib/api';
 import { Card, SectionHeader, Field, SelectInput, Badge } from './ui';
@@ -43,6 +43,7 @@ export function UploadCard({
         partNumberCol: guessPartNumberColumn(parsed.headers) || parsed.headers[0],
         valueCol: valueGuess(parsed.headers) || parsed.headers[1] || parsed.headers[0],
         descriptionCol: guessDescriptionColumn(parsed.headers),
+        categoryCol: guessCategoryColumn(parsed.headers),
       };
       await onFileParsed(parsed, mapping);
     } catch (e) {
@@ -148,6 +149,13 @@ export function UploadCard({
               <SelectInput
                 value={listState.mapping.descriptionCol || ''}
                 onValueChange={(v) => handleMappingChange({ descriptionCol: v || null })}
+                options={[noneOption, ...columnOptions(listState.file.headers)]}
+              />
+            </Field>
+            <Field label="Category Column (optional)">
+              <SelectInput
+                value={listState.mapping.categoryCol || ''}
+                onValueChange={(v) => handleMappingChange({ categoryCol: v || null })}
                 options={[noneOption, ...columnOptions(listState.file.headers)]}
               />
             </Field>

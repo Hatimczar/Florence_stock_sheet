@@ -1,12 +1,13 @@
 import { MergedRow } from './merge';
 
 export function downloadMergedCSV(filename: string, rows: MergedRow[]) {
-  const header = ['Part Number', 'Description', 'Stock', 'Price', 'Status'];
+  const header = ['Part Number', 'Description', 'Category', 'Stock', 'Price', 'Status'];
   const lines = [
     header,
     ...rows.map((r) => [
       r.partNumber,
       r.description,
+      r.category,
       r.stock === null ? '' : String(r.stock),
       r.price === null ? '' : String(r.price),
       r.status,

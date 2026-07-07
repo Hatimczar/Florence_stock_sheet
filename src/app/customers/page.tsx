@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Copy, Check, UserPlus, LogOut } from 'lucide-react';
-import { PublicCustomer, MarkupType } from '@/lib/customers';
-import { fetchCustomers, createCustomerApi } from '@/lib/customerApi';
-import { Card, SectionHeader, Field, TextInput, NumberInput, SelectInput } from '@/components/ui';
+import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
+import { fetchCustomers, createCustomerApi, fetchCategories } from '@/lib/customerApi';
+import { Card, SectionHeader, Field, TextInput } from '@/components/ui';
 import { CustomerRow } from '@/components/CustomerRow';
+import { CategoryMarkupEditor } from '@/components/CategoryMarkupEditor';
 import { AdminGate } from '@/components/AdminGate';
 
 export default function CustomersPage() {
@@ -27,8 +28,8 @@ function CustomersContent() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [markupType, setMarkupType] = useState<MarkupType>('percent');
-  const [markupValue, setMarkupValue] = useState(20);
+  const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +38,7 @@ function CustomersContent() {
     fetchCustomers()
       .then(setCustomers)
       .finally(() => setLoading(false));
+    fetchCategories().then(setCategories);
   }, []);
 
   const handleCreate = async () => {
@@ -45,21 +47,18 @@ function CustomersContent() {
       setError('Name, email, and password are required.');
       return;
     }
+    if (categoryMarkups.length === 0) {
+      setError('Enable at least one category for this customer.');
+      return;
+    }
     setCreating(true);
     try {
-      const customer = await createCustomerApi({
-        name,
-        email,
-        password,
-        markupType,
-        markupValue: markupType === 'percent' ? markupValue / 100 : markupValue,
-      });
+      const customer = await createCustomerApi({ name, email, password, categoryMarkups });
       setCustomers((prev) => [...prev, customer]);
       setName('');
       setEmail('');
       setPassword('');
-      setMarkupValue(20);
-      setMarkupType('percent');
+      setCategoryMarkups([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create customer');
     } finally {
@@ -130,19 +129,12 @@ function CustomersContent() {
           <Field label="Password">
             <TextInput type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Set an initial password" />
           </Field>
-          <Field label="Markup Type">
-            <SelectInput
-              value={markupType}
-              onValueChange={(v) => setMarkupType(v as MarkupType)}
-              options={[
-                { value: 'percent', label: 'Percentage' },
-                { value: 'fixed', label: 'Fixed Amount (AED)' },
-              ]}
-            />
-          </Field>
-          <Field label={markupType === 'percent' ? 'Markup %' : 'Markup (AED)'}>
-            <NumberInput value={markupValue} onValueChange={setMarkupValue} />
-          </Field>
+        </div>
+        <div className="mt-4">
+          <span className="mb-1.5 block text-xs font-medium text-muted">
+            Categories this customer can see, with their own markup
+          </span>
+          <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
         </div>
         {error && <p className="mt-3 text-xs text-loss">{error}</p>}
         <button
@@ -166,6 +158,7 @@ function CustomersContent() {
               <CustomerRow
                 key={c.id}
                 customer={c}
+                categories={categories}
                 onUpdated={(updated) => setCustomers((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))}
                 onDeleted={(id) => setCustomers((prev) => prev.filter((p) => p.id !== id))}
               />

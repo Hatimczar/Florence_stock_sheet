@@ -17,7 +17,9 @@ export function MergedTable({ result }: { result: MergeResult }) {
     const q = search.trim().toUpperCase();
     let rows = result.rows;
     if (q) {
-      rows = rows.filter((r) => r.partNumber.includes(q) || r.description.toUpperCase().includes(q));
+      rows = rows.filter(
+        (r) => r.partNumber.includes(q) || r.description.toUpperCase().includes(q) || r.category.toUpperCase().includes(q)
+      );
     }
     if (sortKey === 'fileOrder') return rows;
     const sorted = [...rows].sort((a, b) => {
@@ -103,6 +105,7 @@ export function MergedTable({ result }: { result: MergeResult }) {
                 Part Number {sortKey === 'partNumber' && (sortDir === 'asc' ? '▲' : '▼')}
               </th>
               <th className="px-3 py-2">Description</th>
+              <th className="px-3 py-2">Category</th>
               <th className="cursor-pointer select-none px-3 py-2" onClick={() => toggleSort('stock')}>
                 Stock {sortKey === 'stock' && (sortDir === 'asc' ? '▲' : '▼')}
               </th>
@@ -115,7 +118,7 @@ export function MergedTable({ result }: { result: MergeResult }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-muted">
+                <td colSpan={6} className="px-3 py-8 text-center text-muted">
                   {result.rows.length === 0 ? 'Upload both lists to see the merged view.' : 'No matches for this search.'}
                 </td>
               </tr>
@@ -124,6 +127,7 @@ export function MergedTable({ result }: { result: MergeResult }) {
                 <tr key={row.partNumber} className="border-t border-border/60">
                   <td className="whitespace-nowrap px-3 py-2 font-medium">{row.partNumber}</td>
                   <td className="max-w-[240px] truncate px-3 py-2 text-muted">{row.description || '—'}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-muted">{row.category}</td>
                   <td className="px-3 py-2 tabular-nums">{row.stock === null ? '—' : row.stock}</td>
                   <td className="px-3 py-2 tabular-nums">{row.price === null ? '—' : row.price.toFixed(2)}</td>
                   <td className="px-3 py-2">{statusBadge(row)}</td>
