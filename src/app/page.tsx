@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Trash2, RefreshCw } from 'lucide-react';
 import { useStockSheetStore } from '@/store/useStockSheetStore';
 import { guessStockColumn, guessPriceColumn, ParsedFile } from '@/lib/parseFile';
@@ -71,11 +72,16 @@ export default function Home() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Florence <span className="text-accent">Stock Sheet</span>
-          </h1>
-          <p className="text-xs text-muted sm:text-sm">Live Stock + Price merge by Part Number — synced across devices</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
+            <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              Florence <span className="text-accent">Stock Sheet</span>
+            </h1>
+            <p className="text-xs text-muted sm:text-sm">Live Stock + Price merge by Part Number — synced across devices</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {lastSyncedAt && (
