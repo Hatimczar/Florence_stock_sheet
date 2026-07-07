@@ -25,10 +25,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 
+  if (customer.status === 'pending') {
+    return NextResponse.json(
+      { error: 'Your account is pending approval. You’ll be able to sign in once it’s approved.' },
+      { status: 403 }
+    );
+  }
+
   await clearFailedLogins(email);
   const { token, maxAge } = await createSession(customer.id);
 
-  const res = NextResponse.json({ ok: true, name: customer.name, email: customer.email });
+  const res = NextResponse.json({ ok: true, name: customer.name, email: customer.email, companyName: customer.companyName });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,

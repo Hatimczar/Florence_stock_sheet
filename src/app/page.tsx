@@ -11,6 +11,8 @@ import { fetchList, uploadList, updateListMapping, clearList } from '@/lib/api';
 import { UploadCard } from '@/components/UploadCard';
 import { MergedTable } from '@/components/MergedTable';
 import { AdminGate } from '@/components/AdminGate';
+import { fetchCustomers } from '@/lib/customerApi';
+import { Badge } from '@/components/ui';
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -25,12 +27,14 @@ export default function Home() {
 function HomeContent() {
   const { stock, price, setStock, setPrice, lastSyncedAt, setLastSyncedAt } = useStockSheetStore();
   const [loading, setLoading] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sync = useCallback(async () => {
-    const [stockList, priceList] = await Promise.all([fetchList('stock'), fetchList('price')]);
+    const [stockList, priceList, customers] = await Promise.all([fetchList('stock'), fetchList('price'), fetchCustomers()]);
     setStock(stockList);
     setPrice(priceList);
+    setPendingCount(customers.filter((c) => c.status === 'pending').length);
     setLastSyncedAt(new Date().toISOString());
   }, [setStock, setPrice, setLastSyncedAt]);
 
@@ -108,6 +112,7 @@ function HomeContent() {
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
           >
             <Users size={14} /> Customers
+            {pendingCount > 0 && <Badge tone="warn">{pendingCount} pending</Badge>}
           </Link>
           <button
             onClick={sync}

@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json()) as {
     email: string;
     name: string;
+    companyName?: string;
     password: string;
     categoryMarkups: CategoryMarkup[];
   };

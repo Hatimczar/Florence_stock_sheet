@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Copy, Check, UserPlus, LogOut } from 'lucide-react';
 import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
 import { fetchCustomers, createCustomerApi, fetchCategories } from '@/lib/customerApi';
-import { Card, SectionHeader, Field, TextInput } from '@/components/ui';
+import { Card, SectionHeader, Field, TextInput, Badge } from '@/components/ui';
 import { CustomerRow } from '@/components/CustomerRow';
+import { PendingCustomerRow } from '@/components/PendingCustomerRow';
 import { CategoryMarkupEditor } from '@/components/CategoryMarkupEditor';
 import { AdminGate } from '@/components/AdminGate';
 
@@ -26,6 +27,7 @@ function CustomersContent() {
   const [copied, setCopied] = useState(false);
 
   const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>([]);
@@ -41,6 +43,9 @@ function CustomersContent() {
     fetchCategories().then(setCategories);
   }, []);
 
+  const pending = useMemo(() => customers.filter((c) => c.status === 'pending'), [customers]);
+  const active = useMemo(() => customers.filter((c) => c.status !== 'pending'), [customers]);
+
   const handleCreate = async () => {
     setError(null);
     if (!name.trim() || !email.trim() || !password) {
@@ -53,9 +58,10 @@ function CustomersContent() {
     }
     setCreating(true);
     try {
-      const customer = await createCustomerApi({ name, email, password, categoryMarkups });
+      const customer = await createCustomerApi({ name, companyName, email, password, categoryMarkups });
       setCustomers((prev) => [...prev, customer]);
       setName('');
+      setCompanyName('');
       setEmail('');
       setPassword('');
       setCategoryMarkups([]);
@@ -104,7 +110,7 @@ function CustomersContent() {
       </header>
 
       <Card className="mb-5">
-        <SectionHeader title="Customer Portal Link" subtitle="Share this link — customers log in with their own email/password" />
+        <SectionHeader title="Customer Portal Link" subtitle="Share this link — customers sign up with their own details" />
         <div className="flex items-center gap-2">
           <TextInput readOnly value={portalUrl} className="flex-1" />
           <button
@@ -117,11 +123,34 @@ function CustomersContent() {
         </div>
       </Card>
 
+      {!loading && pending.length > 0 && (
+        <Card className="mb-5">
+          <div className="mb-1 flex items-center gap-2">
+            <SectionHeader title="Pending Approval" subtitle="Customers who signed up themselves — review and grant access" />
+            <Badge tone="warn">{pending.length}</Badge>
+          </div>
+          <div>
+            {pending.map((c) => (
+              <PendingCustomerRow
+                key={c.id}
+                customer={c}
+                categories={categories}
+                onApproved={(approved) => setCustomers((prev) => prev.map((p) => (p.id === approved.id ? approved : p)))}
+                onRejected={(id) => setCustomers((prev) => prev.filter((p) => p.id !== id))}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card className="mb-5">
-        <SectionHeader step="①" title="Add Customer" />
+        <SectionHeader step="①" title="Add Customer Manually" subtitle="Optional — customers can also sign up themselves via the portal link above" />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Customer Name">
-            <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Futtaim Trading" />
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ahmed Khan" />
+          </Field>
+          <Field label="Company Name">
+            <TextInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Al Futtaim Trading" />
           </Field>
           <Field label="Email">
             <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@example.com" />
@@ -147,14 +176,14 @@ function CustomersContent() {
       </Card>
 
       <Card>
-        <SectionHeader step="②" title="Customers" subtitle={`${customers.length} account${customers.length === 1 ? '' : 's'}`} />
+        <SectionHeader step="②" title="Active Customers" subtitle={`${active.length} account${active.length === 1 ? '' : 's'}`} />
         {loading ? (
           <p className="text-sm text-muted">Loading…</p>
-        ) : customers.length === 0 ? (
-          <p className="text-sm text-muted">No customers yet — add one above.</p>
+        ) : active.length === 0 ? (
+          <p className="text-sm text-muted">No active customers yet.</p>
         ) : (
           <div>
-            {customers.map((c) => (
+            {active.map((c) => (
               <CustomerRow
                 key={c.id}
                 customer={c}

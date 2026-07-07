@@ -68,7 +68,10 @@ export function CustomerRow({
               ))
             )}
           </div>
-          <div className="mt-0.5 text-xs text-muted">{customer.email}</div>
+          <div className="mt-0.5 text-xs text-muted">
+            {customer.email}
+            {customer.companyName && ` · ${customer.companyName}`}
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
           <button onClick={() => setEditing(true)} className="rounded-lg border border-border p-1.5 hover:bg-surface-muted">

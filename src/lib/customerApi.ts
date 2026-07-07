@@ -17,6 +17,7 @@ export async function fetchCategories(): Promise<string[]> {
 export async function createCustomerApi(params: {
   email: string;
   name: string;
+  companyName?: string;
   password: string;
   categoryMarkups: CategoryMarkup[];
 }): Promise<PublicCustomer> {
@@ -47,4 +48,15 @@ export async function updateCustomerApi(
 export async function deleteCustomerApi(id: string): Promise<void> {
   const res = await fetch(`/api/admin/customers/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete customer');
+}
+
+export async function approveCustomerApi(id: string, categoryMarkups: CategoryMarkup[]): Promise<PublicCustomer> {
+  const res = await fetch(`/api/admin/customers/${id}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ categoryMarkups }),
+  });
+  const data = (await res.json()) as { customer?: PublicCustomer; error?: string };
+  if (!res.ok || !data.customer) throw new Error(data.error || 'Failed to approve customer');
+  return data.customer;
 }

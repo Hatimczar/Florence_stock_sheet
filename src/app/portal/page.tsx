@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { LogOut, Search, PackageSearch, RefreshCw } from 'lucide-react';
-import { Card, SectionHeader, Field, TextInput, StatCard, Badge } from '@/components/ui';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle } from 'lucide-react';
+import { Card, SectionHeader, StatCard, Badge } from '@/components/ui';
+import { PortalAuthForm } from '@/components/PortalAuthForm';
 
 interface CustomerInfo {
   name: string;
   email: string;
+  companyName: string;
 }
 
 interface LookupResult {
@@ -18,19 +20,17 @@ interface LookupResult {
   price: number;
 }
 
+const WHATSAPP_NUMBER = '971525348090';
+
 export default function PortalPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
 
   const [items, setItems] = useState<LookupResult[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -75,36 +75,52 @@ export default function PortalPage() {
     );
   }, [items, search]);
 
-  const handleLogin = async () => {
-    setLoginError(null);
-    if (!email || !password) {
-      setLoginError('Enter your email and password.');
-      return;
-    }
-    setLoggingIn(true);
-    try {
-      const res = await fetch('/api/customer/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = (await res.json()) as { ok?: boolean; name?: string; email?: string; error?: string };
-      if (!res.ok || !data.ok) {
-        setLoginError(data.error || 'Invalid email or password');
-        return;
-      }
-      setCustomer({ name: data.name!, email: data.email! });
-      setPassword('');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
   const handleLogout = async () => {
     await fetch('/api/customer/logout', { method: 'POST' });
     setCustomer(null);
     setItems([]);
     setSearch('');
+    setSelected(new Set());
+  };
+
+  const toggleSelected = (partNumber: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(partNumber)) next.delete(partNumber);
+      else next.add(partNumber);
+      return next;
+    });
+  };
+
+  const allVisibleSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.partNumber));
+  const toggleSelectAllVisible = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filtered.forEach((i) => next.delete(i.partNumber));
+      } else {
+        filtered.forEach((i) => next.add(i.partNumber));
+      }
+      return next;
+    });
+  };
+
+  const handleSendWhatsApp = () => {
+    const selectedItems = items.filter((i) => selected.has(i.partNumber));
+    if (selectedItems.length === 0) return;
+
+    const lines = selectedItems.map(
+      (i, idx) =>
+        `${idx + 1}. ${i.partNumber}${i.description ? ` — ${i.description}` : ''}\n   Stock: ${i.stock} | Price: AED ${i.price.toFixed(2)}`
+    );
+    const message = [
+      `*Stock Request from ${customer!.name}${customer!.companyName ? ` (${customer!.companyName})` : ''}*`,
+      '',
+      ...lines,
+    ].join('\n');
+
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   const logoBadge = (
@@ -118,49 +134,7 @@ export default function PortalPage() {
   }
 
   if (!customer) {
-    return (
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          {logoBadge}
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Florence <span className="text-accent">Client Portal</span>
-            </h1>
-            <p className="text-xs text-muted">Sign in to check stock and pricing</p>
-          </div>
-        </div>
-        <Card>
-          <Field label="Email">
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="you@company.com"
-            />
-          </Field>
-          <div className="mt-3">
-            <Field label="Password">
-              <TextInput
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                placeholder="••••••••"
-              />
-            </Field>
-          </div>
-          {loginError && <p className="mt-3 text-xs text-loss">{loginError}</p>}
-          <button
-            onClick={handleLogin}
-            disabled={loggingIn}
-            className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-black disabled:opacity-50"
-          >
-            {loggingIn ? 'Signing in…' : 'Sign In'}
-          </button>
-        </Card>
-      </div>
-    );
+    return <PortalAuthForm onLoggedIn={setCustomer} />;
   }
 
   return (
@@ -207,14 +181,30 @@ export default function PortalPage() {
 
         {itemsError && <p className="mb-3 text-xs text-loss">{itemsError}</p>}
 
-        <div className="mb-3">
+        <div className="mb-3 flex flex-wrap items-center gap-3">
           <StatCard label="Items Available" value={loadingItems ? '…' : String(filtered.length)} />
+          {selected.size > 0 && (
+            <button
+              onClick={handleSendWhatsApp}
+              className="flex items-center gap-1.5 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-black"
+            >
+              <MessageCircle size={16} /> Send {selected.size} Selected via WhatsApp
+            </button>
+          )}
         </div>
 
         <div className="max-h-[560px] overflow-auto rounded-xl border border-border">
-          <table className="w-full min-w-[560px] text-sm">
+          <table className="w-full min-w-[620px] text-sm">
             <thead className="sticky top-0 bg-surface-muted">
               <tr className="text-left text-xs uppercase tracking-wide text-muted">
+                <th className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAllVisible}
+                    className="h-4 w-4 rounded border-border accent-[var(--accent)]"
+                  />
+                </th>
                 <th className="px-3 py-2">Part Number</th>
                 <th className="px-3 py-2">Description</th>
                 <th className="px-3 py-2">Category</th>
@@ -225,13 +215,13 @@ export default function PortalPage() {
             <tbody>
               {loadingItems ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
                     Loading…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-muted">
+                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
                     <div className="flex flex-col items-center gap-2">
                       <PackageSearch size={24} />
                       {items.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
@@ -241,6 +231,14 @@ export default function PortalPage() {
               ) : (
                 filtered.map((item) => (
                   <tr key={item.partNumber} className="border-t border-border/60">
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(item.partNumber)}
+                        onChange={() => toggleSelected(item.partNumber)}
+                        className="h-4 w-4 rounded border-border accent-[var(--accent)]"
+                      />
+                    </td>
                     <td className="whitespace-nowrap px-3 py-2 font-mono font-medium">{item.partNumber}</td>
                     <td className="max-w-[240px] truncate px-3 py-2 text-muted">{item.description || '—'}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-muted">{item.category}</td>
