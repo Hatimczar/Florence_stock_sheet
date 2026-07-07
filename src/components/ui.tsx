@@ -52,6 +52,26 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={clsx(inputBase, props.className)} />;
 }
 
+export function NumberInput({
+  value,
+  onValueChange,
+  ...rest
+}: {
+  value: number;
+  onValueChange: (n: number) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
+  return (
+    <input
+      {...rest}
+      type="number"
+      inputMode="decimal"
+      value={Number.isFinite(value) ? value : 0}
+      onChange={(e) => onValueChange(e.target.valueAsNumber || 0)}
+      className={clsx(inputBase, rest.className)}
+    />
+  );
+}
+
 export function SelectInput({
   value,
   onValueChange,

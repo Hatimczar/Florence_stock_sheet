@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Trash2, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { Trash2, RefreshCw, Users } from 'lucide-react';
 import { useStockSheetStore } from '@/store/useStockSheetStore';
 import { guessStockColumn, guessPriceColumn, ParsedFile } from '@/lib/parseFile';
 import { mergeStockAndPrice, ListMapping } from '@/lib/merge';
@@ -89,6 +90,12 @@ export default function Home() {
               Synced {new Date(lastSyncedAt).toLocaleTimeString()}
             </span>
           )}
+          <Link
+            href="/customers"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          >
+            <Users size={14} /> Customers
+          </Link>
           <button
             onClick={sync}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"

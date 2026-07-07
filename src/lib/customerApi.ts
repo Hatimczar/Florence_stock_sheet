@@ -1,0 +1,44 @@
+import { MarkupType, PublicCustomer } from './customers';
+
+export async function fetchCustomers(): Promise<PublicCustomer[]> {
+  const res = await fetch('/api/admin/customers', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to load customers');
+  const data = (await res.json()) as { customers: PublicCustomer[] };
+  return data.customers;
+}
+
+export async function createCustomerApi(params: {
+  email: string;
+  name: string;
+  password: string;
+  markupType: MarkupType;
+  markupValue: number;
+}): Promise<PublicCustomer> {
+  const res = await fetch('/api/admin/customers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const data = (await res.json()) as { customer?: PublicCustomer; error?: string };
+  if (!res.ok || !data.customer) throw new Error(data.error || 'Failed to create customer');
+  return data.customer;
+}
+
+export async function updateCustomerApi(
+  id: string,
+  patch: { name?: string; password?: string; markupType?: MarkupType; markupValue?: number }
+): Promise<PublicCustomer> {
+  const res = await fetch(`/api/admin/customers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  const data = (await res.json()) as { customer?: PublicCustomer; error?: string };
+  if (!res.ok || !data.customer) throw new Error(data.error || 'Failed to update customer');
+  return data.customer;
+}
+
+export async function deleteCustomerApi(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/customers/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete customer');
+}
