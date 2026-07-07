@@ -3,13 +3,22 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Copy, Check, UserPlus } from 'lucide-react';
+import { ArrowLeft, Copy, Check, UserPlus, LogOut } from 'lucide-react';
 import { PublicCustomer, MarkupType } from '@/lib/customers';
 import { fetchCustomers, createCustomerApi } from '@/lib/customerApi';
 import { Card, SectionHeader, Field, TextInput, NumberInput, SelectInput } from '@/components/ui';
 import { CustomerRow } from '@/components/CustomerRow';
+import { AdminGate } from '@/components/AdminGate';
 
 export default function CustomersPage() {
+  return (
+    <AdminGate>
+      <CustomersContent />
+    </AdminGate>
+  );
+}
+
+function CustomersContent() {
   const [customers, setCustomers] = useState<PublicCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [portalUrl, setPortalUrl] = useState('');
@@ -64,6 +73,11 @@ export default function CustomersPage() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/admin-auth/logout', { method: 'POST' });
+    window.location.reload();
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6 flex items-center gap-3">
@@ -82,6 +96,12 @@ export default function CustomersPage() {
         >
           <ArrowLeft size={14} /> Back
         </Link>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+        >
+          <LogOut size={14} /> Log Out
+        </button>
       </header>
 
       <Card className="mb-5">

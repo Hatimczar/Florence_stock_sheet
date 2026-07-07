@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCustomer, listPublicCustomers } from '@/lib/customers';
 import { MarkupType } from '@/lib/customers';
+import { requireAdmin } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+const UNAUTHORIZED = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) return UNAUTHORIZED;
   const customers = await listPublicCustomers();
   return NextResponse.json({ customers });
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await requireAdmin(req))) return UNAUTHORIZED;
   const body = (await req.json()) as {
     email: string;
     name: string;

@@ -3,17 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Trash2, RefreshCw, Users } from 'lucide-react';
+import { Trash2, RefreshCw, Users, LogOut } from 'lucide-react';
 import { useStockSheetStore } from '@/store/useStockSheetStore';
 import { guessStockColumn, guessPriceColumn, ParsedFile } from '@/lib/parseFile';
 import { mergeStockAndPrice, ListMapping } from '@/lib/merge';
 import { fetchList, uploadList, updateListMapping, clearList } from '@/lib/api';
 import { UploadCard } from '@/components/UploadCard';
 import { MergedTable } from '@/components/MergedTable';
+import { AdminGate } from '@/components/AdminGate';
 
 const POLL_INTERVAL_MS = 10_000;
 
 export default function Home() {
+  return (
+    <AdminGate>
+      <HomeContent />
+    </AdminGate>
+  );
+}
+
+function HomeContent() {
   const { stock, price, setStock, setPrice, lastSyncedAt, setLastSyncedAt } = useStockSheetStore();
   const [loading, setLoading] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -69,6 +78,10 @@ export default function Home() {
     setStock(null);
     setPrice(null);
   };
+  const handleLogout = async () => {
+    await fetch('/api/admin-auth/logout', { method: 'POST' });
+    window.location.reload();
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
@@ -110,6 +123,12 @@ export default function Home() {
               <Trash2 size={14} /> Clear Both
             </button>
           )}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          >
+            <LogOut size={14} /> Log Out
+          </button>
         </div>
       </header>
 
