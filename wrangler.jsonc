@@ -2,6 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "florence-stock-sheet",
+	"workers_dev": true,
 	"compatibility_date": "2024-09-23",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"assets": {
@@ -18,6 +19,12 @@
 		{
 			"binding": "STOCK_SHEET_KV",
 			"id": "40e606db6541491cadc1a8d7a4c99137"
+		}
+	],
+	"routes": [
+		{
+			"pattern": "stocks.florencetrading.me",
+			"custom_domain": true
 		}
 	]
 }
