@@ -98,7 +98,6 @@ function HomeContent() {
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               Florence <span className="text-accent">Stock Sheet</span>
             </h1>
-            <p className="text-xs text-muted sm:text-sm">Live Stock + Price merge by Part Number — synced across devices</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
