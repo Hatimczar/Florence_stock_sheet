@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle } from 'lucide-react';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, ShoppingBag } from 'lucide-react';
 import { Card, SectionHeader, StatCard, Badge } from '@/components/ui';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 
@@ -20,7 +20,14 @@ interface LookupResult {
   price: number;
 }
 
+interface SoldToast {
+  id: string;
+  text: string;
+}
+
 const WHATSAPP_NUMBER = '971525348090';
+const STOCK_POLL_INTERVAL_MS = 15_000;
+const TOAST_LIFETIME_MS = 6_000;
 
 export default function PortalPage() {
   const [checkingSession, setCheckingSession] = useState(true);
@@ -31,6 +38,8 @@ export default function PortalPage() {
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [toasts, setToasts] = useState<SoldToast[]>([]);
+  const prevStockRef = useRef<Map<string, number> | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -44,9 +53,11 @@ export default function PortalPage() {
     })();
   }, []);
 
-  const loadItems = async () => {
-    setItemsError(null);
-    setLoadingItems(true);
+  const loadItems = async (silent = false) => {
+    if (!silent) {
+      setItemsError(null);
+      setLoadingItems(true);
+    }
     try {
       const res = await fetch('/api/customer/browse');
       if (res.status === 401) {
@@ -55,15 +66,40 @@ export default function PortalPage() {
       }
       const data = (await res.json()) as { items: LookupResult[] };
       setItems(data.items);
+
+      const prevStock = prevStockRef.current;
+      if (prevStock) {
+        const newToasts: SoldToast[] = [];
+        for (const item of data.items) {
+          const before = prevStock.get(item.partNumber);
+          if (before !== undefined && item.stock < before) {
+            const sold = before - item.stock;
+            newToasts.push({
+              id: `${item.partNumber}-${Date.now()}`,
+              text: `${sold} ${sold === 1 ? 'unit' : 'units'} sold — ${item.description || item.partNumber}`,
+            });
+          }
+        }
+        if (newToasts.length > 0) {
+          setToasts((prev) => [...prev, ...newToasts]);
+          newToasts.forEach((t) => {
+            setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== t.id)), TOAST_LIFETIME_MS);
+          });
+        }
+      }
+      prevStockRef.current = new Map(data.items.map((i) => [i.partNumber, i.stock]));
     } catch {
-      setItemsError('Could not load stock right now. Please try again.');
+      if (!silent) setItemsError('Could not load stock right now. Please try again.');
     } finally {
-      setLoadingItems(false);
+      if (!silent) setLoadingItems(false);
     }
   };
 
   useEffect(() => {
-    if (customer) loadItems();
+    if (!customer) return;
+    loadItems();
+    const interval = setInterval(() => loadItems(true), STOCK_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer]);
 
@@ -81,6 +117,8 @@ export default function PortalPage() {
     setItems([]);
     setSearch('');
     setSelected(new Set());
+    setToasts([]);
+    prevStockRef.current = null;
   };
 
   const toggleSelected = (partNumber: string) => {
@@ -139,6 +177,18 @@ export default function PortalPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col-reverse items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className="pointer-events-auto flex max-w-sm items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-medium shadow-lg"
+          >
+            <ShoppingBag size={14} className="shrink-0 text-accent" />
+            {t.text}
+          </div>
+        ))}
+      </div>
+
       <header className="mb-6 flex items-center gap-3">
         {logoBadge}
         <div className="min-w-0 flex-1">
@@ -161,7 +211,7 @@ export default function PortalPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <SectionHeader title="Stock & Pricing" subtitle="Search or browse everything available to you" />
           <button
-            onClick={loadItems}
+            onClick={() => loadItems()}
             disabled={loadingItems}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted disabled:opacity-50"
           >

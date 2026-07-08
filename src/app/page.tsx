@@ -7,7 +7,7 @@ import { Trash2, RefreshCw, Users, LogOut } from 'lucide-react';
 import { useStockSheetStore } from '@/store/useStockSheetStore';
 import { guessStockColumn, guessPriceColumn, ParsedFile } from '@/lib/parseFile';
 import { mergeStockAndPrice, ListMapping } from '@/lib/merge';
-import { fetchList, uploadList, updateListMapping, clearList } from '@/lib/api';
+import { fetchList, uploadList, updateListMapping, clearList, updateStockItem } from '@/lib/api';
 import { UploadCard } from '@/components/UploadCard';
 import { MergedTable } from '@/components/MergedTable';
 import { AdminGate } from '@/components/AdminGate';
@@ -86,6 +86,10 @@ function HomeContent() {
     await fetch('/api/admin-auth/logout', { method: 'POST' });
     window.location.reload();
   };
+  const handleUpdateStock = async (partNumber: string, newStock: number) => {
+    const stored = await updateStockItem(partNumber, newStock);
+    setStock(stored);
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
@@ -163,7 +167,7 @@ function HomeContent() {
             />
           </div>
 
-          <MergedTable result={mergeResult} />
+          <MergedTable result={mergeResult} onUpdateStock={handleUpdateStock} />
         </>
       )}
 

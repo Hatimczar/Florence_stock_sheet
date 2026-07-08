@@ -1,17 +1,27 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Download, Search, AlertTriangle, ListRestart } from 'lucide-react';
+import { Download, Search, AlertTriangle, ListRestart, Pencil, Check, X } from 'lucide-react';
 import { MergeResult, MergedRow } from '@/lib/merge';
 import { downloadMergedCSV } from '@/lib/export';
 import { Card, SectionHeader, Badge, StatCard } from './ui';
 
 type SortKey = 'fileOrder' | 'partNumber' | 'stock' | 'price';
 
-export function MergedTable({ result }: { result: MergeResult }) {
+export function MergedTable({
+  result,
+  onUpdateStock,
+}: {
+  result: MergeResult;
+  onUpdateStock?: (partNumber: string, newStock: number) => Promise<void>;
+}) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('fileOrder');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [editingPartNumber, setEditingPartNumber] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
@@ -44,6 +54,35 @@ export function MergedTable({ result }: { result: MergeResult }) {
     if (row.status === 'matched') return <Badge tone="profit">Matched</Badge>;
     if (row.status === 'missing-stock') return <Badge tone="warn">No Stock Data</Badge>;
     return <Badge tone="warn">No Price Data</Badge>;
+  };
+
+  const startEdit = (row: MergedRow) => {
+    setEditingPartNumber(row.partNumber);
+    setEditValue(String(row.stock ?? 0));
+    setEditError(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingPartNumber(null);
+    setEditError(null);
+  };
+
+  const saveEdit = async (partNumber: string) => {
+    const parsed = Number(editValue);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setEditError('Enter a valid stock quantity.');
+      return;
+    }
+    setSaving(true);
+    setEditError(null);
+    try {
+      await onUpdateStock?.(partNumber, parsed);
+      setEditingPartNumber(null);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : 'Could not update stock');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -128,7 +167,46 @@ export function MergedTable({ result }: { result: MergeResult }) {
                   <td className="whitespace-nowrap px-3 py-2 font-medium">{row.partNumber}</td>
                   <td className="max-w-[240px] truncate px-3 py-2 text-muted">{row.description || '—'}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-muted">{row.category}</td>
-                  <td className="px-3 py-2 tabular-nums">{row.stock === null ? '—' : row.stock}</td>
+                  <td className="px-3 py-2 tabular-nums">
+                    {editingPartNumber === row.partNumber ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          autoFocus
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEdit(row.partNumber);
+                            if (e.key === 'Escape') cancelEdit();
+                          }}
+                          disabled={saving}
+                          className="w-16 rounded border border-accent bg-surface px-1.5 py-0.5 text-sm outline-none disabled:opacity-50"
+                        />
+                        <button
+                          onClick={() => saveEdit(row.partNumber)}
+                          disabled={saving}
+                          className="text-profit hover:opacity-75 disabled:opacity-50"
+                          title="Save"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button onClick={cancelEdit} disabled={saving} className="text-muted hover:opacity-75 disabled:opacity-50" title="Cancel">
+                          <X size={14} />
+                        </button>
+                        {editError && <span className="whitespace-nowrap text-xs text-loss">{editError}</span>}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <span>{row.stock === null ? '—' : row.stock}</span>
+                        {onUpdateStock && (
+                          <button onClick={() => startEdit(row)} className="text-muted hover:text-accent" title="Edit stock">
+                            <Pencil size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-3 py-2 tabular-nums">{row.price === null ? '—' : row.price.toFixed(2)}</td>
                   <td className="px-3 py-2">{statusBadge(row)}</td>
                 </tr>

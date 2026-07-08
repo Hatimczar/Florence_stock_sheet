@@ -42,3 +42,14 @@ export async function clearList(kind: ListKind): Promise<void> {
   const res = await fetch(`/api/${kind}`, { method: 'DELETE' });
   if (!res.ok) throw new Error(`Failed to clear ${kind} list`);
 }
+
+export async function updateStockItem(partNumber: string, newStock: number): Promise<StoredList> {
+  const res = await fetch('/api/admin/stock-item', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partNumber, newStock }),
+  });
+  const data = (await res.json()) as { list?: StoredList; error?: string };
+  if (!res.ok || !data.list) throw new Error(data.error || 'Failed to update stock');
+  return data.list;
+}
