@@ -139,9 +139,9 @@ export default function PortalPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6">
-      <header className="mb-6 flex flex-wrap items-center gap-3">
+      <header className="mb-6 flex items-center gap-3">
         {logoBadge}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
             Florence <span className="text-accent">Client Portal</span>
           </h1>
@@ -151,7 +151,7 @@ export default function PortalPage() {
         </div>
         <button
           onClick={handleLogout}
-          className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
         >
           <LogOut size={14} /> Log Out
         </button>

@@ -101,7 +101,7 @@ function HomeContent() {
             <p className="text-xs text-muted sm:text-sm">Live Stock + Price merge by Part Number — synced across devices</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {lastSyncedAt && (
             <span className="hidden text-[11px] text-muted sm:inline">
               Synced {new Date(lastSyncedAt).toLocaleTimeString()}

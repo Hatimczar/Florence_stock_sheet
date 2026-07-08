@@ -144,7 +144,7 @@ export function Badge({
     warn: 'bg-warn-bg text-warn',
   };
   return (
-    <span className={clsx('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', toneClasses[tone])}>
+    <span className={clsx('inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium', toneClasses[tone])}>
       {children}
     </span>
   );

@@ -85,28 +85,32 @@ function CustomersContent() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
-      <header className="mb-6 flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-          <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
+            <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              Customer <span className="text-accent">Accounts</span>
+            </h1>
+            <p className="text-xs text-muted sm:text-sm">Manage who can access the customer portal, and their markup</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Customer <span className="text-accent">Accounts</span>
-          </h1>
-          <p className="text-xs text-muted sm:text-sm">Manage who can access the customer portal, and their markup</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          >
+            <ArrowLeft size={14} /> Back
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          >
+            <LogOut size={14} /> Log Out
+          </button>
         </div>
-        <Link
-          href="/"
-          className="ml-auto flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
-        >
-          <ArrowLeft size={14} /> Back
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
-        >
-          <LogOut size={14} /> Log Out
-        </button>
       </header>
 
       <Card className="mb-5">
