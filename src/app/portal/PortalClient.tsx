@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, ShoppingBag } from 'lucide-react';
-import { Card, SectionHeader, StatCard, Badge, SelectInput } from '@/components/ui';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, ShoppingBag, Check } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { fetchCustomerCatalog, CustomerCatalogItem } from '@/lib/catalogApi';
 
@@ -30,10 +29,10 @@ const WHATSAPP_NUMBER = '971525348090';
 const STOCK_POLL_INTERVAL_MS = 15_000;
 const TOAST_LIFETIME_MS = 6_000;
 
-const AVAIL_TONE: Record<string, 'profit' | 'warn' | 'loss'> = {
-  Available: 'profit',
-  'On Demand': 'warn',
-  Limited: 'loss',
+const AVAIL_CLASS: Record<string, string> = {
+  Available: 'avail-yes',
+  'On Demand': 'avail-ondemand',
+  Limited: 'avail-limited',
 };
 
 export default function PortalClient() {
@@ -177,19 +176,6 @@ export default function PortalClient() {
     });
   };
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.partNumber));
-  const toggleSelectAllVisible = () => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        filtered.forEach((i) => next.delete(i.partNumber));
-      } else {
-        filtered.forEach((i) => next.add(i.partNumber));
-      }
-      return next;
-    });
-  };
-
   const handleSendWhatsApp = () => {
     const selectedItems = items.filter((i) => selected.has(i.partNumber));
     if (selectedItems.length === 0) return;
@@ -270,7 +256,11 @@ export default function PortalClient() {
   };
 
   if (checkingSession) {
-    return <div className="flex flex-1 items-center justify-center text-sm text-muted">Loading…</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm" style={{ color: 'var(--muted)' }}>
+        Loading…
+      </div>
+    );
   }
 
   if (!customer) {
@@ -285,248 +275,212 @@ export default function PortalClient() {
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col">
+    <div className="flex w-full flex-1 flex-col" style={{ position: 'relative' }}>
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col-reverse items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="pointer-events-auto flex max-w-sm items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-medium shadow-lg"
+            className="pointer-events-auto toast"
+            style={{ position: 'static' }}
           >
-            <ShoppingBag size={14} className="shrink-0 text-accent" />
+            <ShoppingBag />
             {t.text}
           </div>
         ))}
       </div>
 
-      {/* Collapsing large-title nav — the small inline title fades in once the large title scrolls past. */}
-      <div
-        className={`sticky top-0 z-30 flex h-[52px] shrink-0 items-center justify-center border-b transition-colors ${
-          navScrolled ? 'border-sep bg-glass backdrop-blur-xl backdrop-saturate-150' : 'border-transparent bg-transparent'
-        }`}
-      >
-        <span
-          className={`absolute text-[15px] font-semibold transition-opacity duration-150 ${navScrolled ? 'opacity-100' : 'opacity-0'}`}
-        >
+      {/* Collapsing large-title nav — ported 1:1 from the V3 demo's .ios-nav / .ios-nav-inline */}
+      <div className={`ios-nav ${navScrolled ? 'scrolled' : ''}`}>
+        <div className="ios-nav-inline">
           Client Portal
-        </span>
-        <button
-          onClick={handleLogout}
-          className="absolute right-4 flex items-center gap-1 text-xs font-medium text-accent"
-        >
-          <LogOut size={13} /> Log Out
-        </button>
+          <span className="logout-link" onClick={handleLogout} role="button">
+            <LogOut size={13} /> Log Out
+          </span>
+        </div>
       </div>
 
-      <div ref={largeTitleRef} className="mx-auto w-full max-w-4xl px-4 pb-3 pt-1 sm:px-6">
-        <h1 className="text-[28px] font-bold tracking-tight sm:text-[32px]">
-          Florence <span className="text-accent">Client Portal</span>
+      <div ref={largeTitleRef} className="ios-large-title">
+        <h1>
+          Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
         </h1>
-        <p className="mt-0.5 text-sm text-muted">
+        <div className="sub">
           {customer.name} · {customer.email}
-        </p>
+          <span style={{ float: 'right', color: 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }} onClick={handleLogout} role="button">
+            <LogOut size={13} /> Log Out
+          </span>
+        </div>
       </div>
 
-      <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-8 sm:px-6">
-      {customer.enabledBrands.length > 0 && (
-        <>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {customer.enabledBrands.map((brand) => {
-              const active = selectedBrands.has(brand);
-              return (
-                <button
-                  key={brand}
-                  onClick={() => toggleBrand(brand)}
-                  className={
-                    active
-                      ? 'flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-xs font-semibold text-white'
-                      : 'flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:bg-surface'
-                  }
-                >
-                  <span className={active ? 'h-1.5 w-1.5 rounded-full bg-black' : 'h-1.5 w-1.5 rounded-full bg-muted'} />
-                  {brand}
-                </button>
-              );
-            })}
-          </div>
+      <div className="ios-content">
+        {customer.enabledBrands.length > 0 && (
+          <>
+            <div className="brand-toggle-row">
+              {customer.enabledBrands.map((brand) => {
+                const active = selectedBrands.has(brand);
+                return (
+                  <button key={brand} onClick={() => toggleBrand(brand)} className={`brand-btn ${active ? 'active' : ''}`}>
+                    <span className="dot" />
+                    {brand}
+                  </button>
+                );
+              })}
+            </div>
 
-          <Card className="mb-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <SectionHeader title="Vendor Catalog" subtitle="Availability by brand — no pricing shown here" />
-              <button
-                onClick={() => loadCatalog()}
-                disabled={loadingCatalog}
-                className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted disabled:opacity-50"
-              >
-                <RefreshCw size={13} /> Refresh
+            <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Vendor Catalog · no pricing shown here</span>
+              <button className="toolbar-btn" onClick={() => loadCatalog()} disabled={loadingCatalog}>
+                <RefreshCw /> Refresh
               </button>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-2">
-              <SelectInput
-                value={catalogCategory}
-                onValueChange={setCatalogCategory}
-                options={[{ value: 'all', label: 'All Categories' }, ...catalogCategories.map((c) => ({ value: c, label: c }))]}
-                className="w-auto min-w-[9rem]"
-              />
-              <SelectInput
-                value={catalogAvail}
-                onValueChange={setCatalogAvail}
-                options={[
-                  { value: 'all', label: 'All Availability' },
-                  { value: 'Available', label: 'Available' },
-                  { value: 'On Demand', label: 'On Demand' },
-                  { value: 'Limited', label: 'Limited' },
-                ]}
-                className="w-auto min-w-[9rem]"
-              />
+            <div className="filter-bar">
+              <select className="filter-select" value={catalogCategory} onChange={(e) => setCatalogCategory(e.target.value)}>
+                <option value="all">All Categories</option>
+                {catalogCategories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <select className="filter-select" value={catalogAvail} onChange={(e) => setCatalogAvail(e.target.value)}>
+                <option value="all">All Availability</option>
+                <option value="Available">Available</option>
+                <option value="On Demand">On Demand</option>
+                <option value="Limited">Limited</option>
+              </select>
             </div>
 
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <StatCard label="Items Available" value={loadingCatalog ? '…' : String(catalogFiltered.length)} />
-              {catalogSelected.size > 0 && (
-                <button
-                  onClick={handleSendCatalogWhatsApp}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-black"
-                >
-                  <MessageCircle size={16} /> Send {catalogSelected.size} Selected via WhatsApp
-                </button>
-              )}
+            <div className="stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="stat">
+                <div className="k">Items Available</div>
+                <div className="v">{loadingCatalog ? '…' : catalogFiltered.length}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                {catalogSelected.size > 0 && (
+                  <button className="whatsapp-chip" onClick={handleSendCatalogWhatsApp}>
+                    <MessageCircle /> Send {catalogSelected.size}
+                  </button>
+                )}
+              </div>
             </div>
 
             {catalogGroups.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 0', textAlign: 'center', color: 'var(--muted)' }}>
                 <PackageSearch size={24} />
                 {selectedBrands.size === 0 ? 'Toggle a brand above to see stock.' : 'No matches for these filters.'}
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                {catalogGroups.map(([group, groupItems]) => (
-                  <div key={group}>
-                    <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">{group}</h4>
-                    <div className="overflow-hidden rounded-xl border border-border">
-                      {groupItems.map((item, idx) => (
-                        <div
-                          key={item.wic}
-                          className={`flex items-start gap-3 px-3 py-2.5 ${idx > 0 ? 'border-t border-border/60' : ''}`}
+              catalogGroups.map(([group, groupItems]) => (
+                <div key={group}>
+                  <div className="section-header">{group}</div>
+                  <div className="ios-group">
+                    {groupItems.map((item) => (
+                      <div key={item.wic} className="ios-row" style={{ alignItems: 'flex-start' }}>
+                        <button
+                          className={`select-dot ${catalogSelected.has(item.wic) ? 'checked' : ''}`}
+                          onClick={() => toggleCatalogSelected(item.wic)}
                         >
-                          <input
-                            type="checkbox"
-                            checked={catalogSelected.has(item.wic)}
-                            onChange={() => toggleCatalogSelected(item.wic)}
-                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-[var(--accent)]"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="font-mono text-sm font-medium">{item.wic}</div>
-                            <div className="text-xs text-muted">{item.description || '—'}</div>
+                          <Check />
+                        </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="row-title mono" style={{ fontSize: 13 }}>
+                            {item.wic}
                           </div>
-                          <Badge tone={AVAIL_TONE[item.availability] ?? 'neutral'}>{item.availability}</Badge>
+                          <div className="row-sub" style={{ whiteSpace: 'normal' }}>
+                            {item.description || '—'}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                        <span className={`pill ${AVAIL_CLASS[item.availability] ?? ''}`} style={{ marginTop: 2 }}>
+                          {item.availability}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
-          </Card>
-        </>
-      )}
+          </>
+        )}
 
-      <Card>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <SectionHeader title="Stock & Pricing" subtitle="Search or browse everything available to you" />
-          <button
-            onClick={() => loadItems()}
-            disabled={loadingItems}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted disabled:opacity-50"
-          >
-            <RefreshCw size={13} /> Refresh
+        <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>Stock &amp; Pricing</span>
+          <button className="toolbar-btn" onClick={() => loadItems()} disabled={loadingItems}>
+            <RefreshCw /> Refresh
           </button>
         </div>
 
-        <div className="relative mb-4">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search part number, description, or category…"
-            className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-          />
+        <div className="search-field">
+          <Search />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search part number, description, or category…" />
         </div>
 
-        {itemsError && <p className="mb-3 text-xs text-loss">{itemsError}</p>}
+        {itemsError && <p style={{ marginBottom: 12, fontSize: 12, color: 'var(--loss)' }}>{itemsError}</p>}
 
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <StatCard label="Items Available" value={loadingItems ? '…' : String(filtered.length)} />
-          {selected.size > 0 && (
-            <button
-              onClick={handleSendWhatsApp}
-              className="flex items-center gap-1.5 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-black"
-            >
-              <MessageCircle size={16} /> Send {selected.size} Selected via WhatsApp
-            </button>
-          )}
+        <div className="stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="stat">
+            <div className="k">Items Available</div>
+            <div className="v">{loadingItems ? '…' : filtered.length}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {selected.size > 0 && (
+              <button className="whatsapp-chip" onClick={handleSendWhatsApp}>
+                <MessageCircle /> Send {selected.size}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="max-h-[560px] overflow-auto rounded-xl border border-border">
-          <table className="w-full min-w-[620px] text-sm">
-            <thead className="sticky top-0 bg-surface-muted">
-              <tr className="text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={allVisibleSelected}
-                    onChange={toggleSelectAllVisible}
-                    className="h-4 w-4 rounded border-border accent-[var(--accent)]"
-                  />
-                </th>
-                <th className="px-3 py-2">Part Number</th>
-                <th className="px-3 py-2">Description</th>
-                <th className="px-3 py-2">Category</th>
-                <th className="px-3 py-2">Stock</th>
-                <th className="px-3 py-2">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingItems ? (
+        <div className="table-card">
+          <div className="table-scroll">
+            <table className="apple-table">
+              <thead>
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
-                    Loading…
-                  </td>
+                  <th style={{ width: 36 }}></th>
+                  <th>Part Number</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th className="num">Stock</th>
+                  <th className="num">Price</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
-                    <div className="flex flex-col items-center gap-2">
-                      <PackageSearch size={24} />
-                      {items.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((item) => (
-                  <tr key={item.partNumber} className="border-t border-border/60">
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(item.partNumber)}
-                        onChange={() => toggleSelected(item.partNumber)}
-                        className="h-4 w-4 rounded border-border accent-[var(--accent)]"
-                      />
+              </thead>
+              <tbody>
+                {loadingItems ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                      Loading…
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono font-medium">{item.partNumber}</td>
-                    <td className="max-w-[240px] truncate px-3 py-2 text-muted">{item.description || '—'}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-muted">{item.category}</td>
-                    <td className="px-3 py-2 tabular-nums">
-                      {item.stock > 0 ? item.stock : <Badge tone="loss">Out of Stock</Badge>}
-                    </td>
-                    <td className="px-3 py-2 tabular-nums font-medium text-accent">AED {item.price.toFixed(2)}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                      {items.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((item) => (
+                    <tr key={item.partNumber}>
+                      <td>
+                        <button
+                          className={`select-dot ${selected.has(item.partNumber) ? 'checked' : ''}`}
+                          onClick={() => toggleSelected(item.partNumber)}
+                        >
+                          <Check />
+                        </button>
+                      </td>
+                      <td className="mono">{item.partNumber}</td>
+                      <td className="desc-cell">{item.description || '—'}</td>
+                      <td>{item.category}</td>
+                      <td className="num mono stock-cell">
+                        {item.stock > 0 ? item.stock : <span className="pill pill-red">Out of Stock</span>}
+                      </td>
+                      <td className="num mono price-cell">AED {item.price.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </Card>
       </div>
     </div>
   );

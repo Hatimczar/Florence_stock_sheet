@@ -1,8 +1,6 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import Image from 'next/image';
-import { Card, Field, TextInput } from './ui';
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const [checking, setChecking] = useState(true);
@@ -43,26 +41,26 @@ export function AdminGate({ children }: { children: ReactNode }) {
   };
 
   if (checking) {
-    return <div className="flex flex-1 items-center justify-center text-sm text-muted">Loading…</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm" style={{ color: 'var(--muted)' }}>
+        Loading…
+      </div>
+    );
   }
 
   if (!authenticated) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
-        <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-            <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Florence <span className="text-accent">Admin</span>
-            </h1>
-            <p className="text-xs text-muted">Enter the admin password to continue</p>
-          </div>
+        <div className="mb-6" style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Florence <span style={{ color: 'var(--accent)' }}>Admin</span>
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Enter the admin password to continue</p>
         </div>
-        <Card>
-          <Field label="Password">
-            <TextInput
+        <div className="ios-group">
+          <div className="ios-row">
+            <label>Password</label>
+            <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -70,16 +68,12 @@ export function AdminGate({ children }: { children: ReactNode }) {
               placeholder="••••••••"
               autoFocus
             />
-          </Field>
-          {error && <p className="mt-3 text-xs text-loss">{error}</p>}
-          <button
-            onClick={handleLogin}
-            disabled={loggingIn}
-            className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {loggingIn ? 'Checking…' : 'Unlock'}
-          </button>
-        </Card>
+          </div>
+        </div>
+        {error && <p style={{ marginBottom: 12, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
+        <button onClick={handleLogin} disabled={loggingIn} className="full-btn">
+          {loggingIn ? 'Checking…' : 'Unlock'}
+        </button>
       </div>
     );
   }

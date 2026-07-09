@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { Card, Field, TextInput } from './ui';
 
 interface CustomerInfo {
   name: string;
@@ -22,12 +20,6 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const logoBadge = (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-      <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
-    </div>
-  );
 
   const switchMode = (next: 'signin' | 'signup') => {
     setMode(next);
@@ -102,78 +94,65 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
-      <div className="mb-6 flex flex-col items-center gap-3 text-center">
-        {logoBadge}
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            Florence <span className="text-accent">Client Portal</span>
-          </h1>
-          <p className="text-xs text-muted">
-            {mode === 'signin' ? 'Sign in to check stock and pricing' : 'Request access to check stock and pricing'}
-          </p>
-        </div>
+      <div className="mb-6" style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
+        </h1>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+          {mode === 'signin' ? 'Sign in to check stock and pricing' : 'Request access to check stock and pricing'}
+        </p>
       </div>
 
-      <div className="mb-4 flex rounded-lg border border-border bg-surface-muted p-1">
-        <button
-          onClick={() => switchMode('signin')}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signin' ? 'bg-accent text-white' : 'text-muted'}`}
-        >
+      <div className="ios-seg">
+        <button className={mode === 'signin' ? 'active' : ''} onClick={() => switchMode('signin')}>
           Sign In
         </button>
-        <button
-          onClick={() => switchMode('signup')}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signup' ? 'bg-accent text-white' : 'text-muted'}`}
-        >
+        <button className={mode === 'signup' ? 'active' : ''} onClick={() => switchMode('signup')}>
           Sign Up
         </button>
       </div>
 
-      <Card>
+      <div className="ios-group">
         {mode === 'signup' && (
           <>
-            <Field label="Your Name">
-              <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Ahmed Khan" />
-            </Field>
-            <div className="mt-3">
-              <Field label="Company Name">
-                <TextInput value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Al Futtaim Trading" />
-              </Field>
+            <div className="ios-row">
+              <label>Name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ahmed Khan" />
+            </div>
+            <div className="ios-row">
+              <label>Company</label>
+              <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Al Futtaim Trading" />
             </div>
           </>
         )}
-        <div className={mode === 'signup' ? 'mt-3' : ''}>
-          <Field label="Email">
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (mode === 'signin' ? handleLogin() : handleSignup())}
-              placeholder="you@company.com"
-            />
-          </Field>
+        <div className="ios-row">
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && (mode === 'signin' ? handleLogin() : handleSignup())}
+            placeholder="you@company.com"
+          />
         </div>
-        <div className="mt-3">
-          <Field label="Password">
-            <TextInput
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (mode === 'signin' ? handleLogin() : handleSignup())}
-              placeholder="••••••••"
-            />
-          </Field>
+        <div className="ios-row">
+          <label>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && (mode === 'signin' ? handleLogin() : handleSignup())}
+            placeholder="••••••••"
+          />
         </div>
-        {error && <p className="mt-3 text-xs text-loss">{error}</p>}
-        {success && <p className="mt-3 text-xs text-profit">{success}</p>}
-        <button
-          onClick={mode === 'signin' ? handleLogin : handleSignup}
-          disabled={busy}
-          className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {busy ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Request Access'}
-        </button>
-      </Card>
+      </div>
+
+      {error && <p style={{ marginBottom: 12, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
+      {success && <p style={{ marginBottom: 12, fontSize: 12, color: 'var(--profit)' }}>{success}</p>}
+
+      <button onClick={mode === 'signin' ? handleLogin : handleSignup} disabled={busy} className="full-btn">
+        {busy ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Request Access'}
+      </button>
     </div>
   );
 }

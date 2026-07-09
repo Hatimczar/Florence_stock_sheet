@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { CatalogItem } from '@/lib/catalog';
 import { fetchAdminCatalog, syncCatalogApi } from '@/lib/catalogApi';
-import { Card, SectionHeader, StatCard, SelectInput, Badge } from '@/components/ui';
 import { AdminGate } from '@/components/AdminGate';
 import { AdminShell } from '@/components/AdminShell';
 
 const AVAIL_LABEL: Record<string, string> = { yes: 'Available', 'on demand': 'On Demand', limited: 'Limited' };
-const AVAIL_TONE: Record<string, 'profit' | 'warn' | 'loss'> = { yes: 'profit', 'on demand': 'warn', limited: 'loss' };
+const AVAIL_CLASS: Record<string, string> = { yes: 'pill-green', 'on demand': 'pill-orange', limited: 'pill-red' };
 
 export default function CatalogClient() {
   return (
@@ -74,108 +73,110 @@ function CatalogContent() {
       active="catalog"
       title="Vendor Catalog"
       toolbarActions={
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="flex items-center gap-1.5 rounded-md-a bg-accent px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
-          <span className="hidden sm:inline">{syncing ? 'Syncing…' : 'Sync from IT4Profit'}</span>
+        <button onClick={handleSync} disabled={syncing} className="toolbar-btn primary">
+          <RefreshCw style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
+          {syncing ? 'Syncing…' : 'Sync from IT4Profit'}
         </button>
       }
     >
-      <p className="mb-4 text-xs text-muted">
+      <p style={{ marginBottom: 16, fontSize: 12, color: 'var(--muted)' }}>
         {syncedAt ? `Synced from IT4Profit ${new Date(syncedAt).toLocaleString()}` : 'Not synced yet'}
       </p>
 
-      {error && <p className="mb-3 text-xs text-loss">{error}</p>}
+      {error && <p style={{ marginBottom: 12, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
 
       {loading ? (
-        <div className="py-20 text-center text-sm text-muted">Loading…</div>
+        <div className="py-20 text-center text-sm" style={{ color: 'var(--muted)' }}>
+          Loading…
+        </div>
       ) : items.length === 0 ? (
-        <Card>
-          <p className="text-sm text-muted">
+        <div className="card" style={{ padding: 16 }}>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>
             No catalog synced yet. Click <strong>Sync from IT4Profit</strong> to fetch brands, categories, availability, and
             pricing from the vendor feed.
           </p>
-        </Card>
+        </div>
       ) : (
-        <Card>
-          <SectionHeader
-            title="Merged Vendor Catalog"
-            subtitle="WIC, description, brand, category, both prices, and availability — pulled directly from IT4Profit"
-          />
+        <>
+          <div className="section-header">Merged Vendor Catalog · WIC, description, brand, category, both prices, availability</div>
 
-          <div className="mb-4 flex flex-wrap gap-2">
-            <SelectInput
-              value={categoryFilter}
-              onValueChange={setCategoryFilter}
-              options={[{ value: 'all', label: 'All Categories' }, ...categories.map((c) => ({ value: c, label: c }))]}
-              className="w-auto min-w-[10rem]"
-            />
-            <SelectInput
-              value={availFilter}
-              onValueChange={setAvailFilter}
-              options={[
-                { value: 'all', label: 'All Availability' },
-                { value: 'yes', label: 'Available' },
-                { value: 'on demand', label: 'On Demand' },
-                { value: 'limited', label: 'Limited' },
-              ]}
-              className="w-auto min-w-[10rem]"
-            />
+          <div className="filter-bar">
+            <select className="filter-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <select className="filter-select" value={availFilter} onChange={(e) => setAvailFilter(e.target.value)}>
+              <option value="all">All Availability</option>
+              <option value="yes">Available</option>
+              <option value="on demand">On Demand</option>
+              <option value="limited">Limited</option>
+            </select>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Total Parts" value={String(filtered.length)} />
-            <StatCard label="Available" value={String(counts.yes)} tone="profit" />
-            <StatCard label="On Demand" value={String(counts['on demand'])} tone="warn" />
-            <StatCard label="Limited" value={String(counts.limited)} tone="loss" />
+          <div className="stats">
+            <div className="stat">
+              <div className="k">Total Parts</div>
+              <div className="v">{filtered.length}</div>
+            </div>
+            <div className="stat tone-green">
+              <div className="k">Available</div>
+              <div className="v">{counts.yes}</div>
+            </div>
+            <div className="stat tone-orange">
+              <div className="k">On Demand</div>
+              <div className="v">{counts['on demand']}</div>
+            </div>
+            <div className="stat tone-red">
+              <div className="k">Limited</div>
+              <div className="v">{counts.limited}</div>
+            </div>
           </div>
 
-          <div className="max-h-[560px] overflow-auto rounded-xl border border-border">
-            <table className="w-full min-w-[760px] text-sm">
-              <thead className="sticky top-0 bg-surface-muted">
-                <tr className="text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="px-3 py-2">Part Number</th>
-                  <th className="px-3 py-2">Description</th>
-                  <th className="px-3 py-2">Brand</th>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2 text-right">Retail Price</th>
-                  <th className="px-3 py-2 text-right">My Price</th>
-                  <th className="px-3 py-2">Availability</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
+          <div className="table-card">
+            <div className="table-scroll">
+              <table className="apple-table">
+                <thead>
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-muted">
-                      No parts match these filters.
-                    </td>
+                    <th>Part Number</th>
+                    <th>Description</th>
+                    <th>Brand</th>
+                    <th>Category</th>
+                    <th className="num">Retail Price</th>
+                    <th className="num">My Price</th>
+                    <th>Availability</th>
                   </tr>
-                ) : (
-                  filtered.map((item) => (
-                    <tr key={item.wic} className="border-t border-border/60">
-                      <td className="whitespace-nowrap px-3 py-2 font-mono font-medium">{item.wic}</td>
-                      <td className="max-w-[280px] truncate px-3 py-2 text-muted">{item.description || '—'}</td>
-                      <td className="whitespace-nowrap px-3 py-2">{item.vendor}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-muted">{item.group}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-accent">
-                        {item.retailPrice !== null ? item.retailPrice.toFixed(2) : '—'}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-accent">
-                        {item.myPrice !== null ? item.myPrice.toFixed(2) : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge tone={AVAIL_TONE[item.avail] ?? 'neutral'}>{AVAIL_LABEL[item.avail] ?? (item.avail || '—')}</Badge>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                        No parts match these filters.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filtered.map((item) => (
+                      <tr key={item.wic}>
+                        <td className="mono">{item.wic}</td>
+                        <td className="desc-cell">{item.description || '—'}</td>
+                        <td>{item.vendor}</td>
+                        <td>{item.group}</td>
+                        <td className="num mono price-cell">{item.retailPrice !== null ? item.retailPrice.toFixed(2) : '—'}</td>
+                        <td className="num mono price-cell">{item.myPrice !== null ? item.myPrice.toFixed(2) : '—'}</td>
+                        <td>
+                          <span className={`pill ${AVAIL_CLASS[item.avail] ?? ''}`}>{AVAIL_LABEL[item.avail] ?? (item.avail || '—')}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </Card>
+        </>
       )}
     </AdminShell>
   );

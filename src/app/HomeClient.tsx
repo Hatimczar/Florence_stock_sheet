@@ -93,18 +93,12 @@ function HomeContent() {
               Synced {new Date(lastSyncedAt).toLocaleTimeString()}
             </span>
           )}
-          <button
-            onClick={sync}
-            className="flex items-center gap-1.5 rounded-md-a border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-muted"
-          >
-            <RefreshCw size={13} /> <span className="hidden sm:inline">Refresh</span>
+          <button onClick={sync} className="toolbar-btn">
+            <RefreshCw /> Refresh
           </button>
           {(stock || price) && (
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-1.5 rounded-md-a border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-muted"
-            >
-              <Trash2 size={13} /> <span className="hidden sm:inline">Clear Both</span>
+            <button onClick={handleClearAll} className="toolbar-btn">
+              <Trash2 /> Clear Both
             </button>
           )}
         </>
@@ -114,34 +108,32 @@ function HomeContent() {
         <div className="py-20 text-center text-sm text-muted">Loading…</div>
       ) : (
         <>
-          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <UploadCard
-              step="①"
-              title="Stock List"
-              valueLabel="Stock Quantity"
-              valueGuess={guessStockColumn}
-              listState={stock}
-              onFileParsed={handleStockParsed}
-              onMappingChange={handleStockMappingChange}
-              onClear={handleClearStock}
-            />
-            <UploadCard
-              step="②"
-              title="Price List"
-              valueLabel="Price"
-              valueGuess={guessPriceColumn}
-              listState={price}
-              onFileParsed={handlePriceParsed}
-              onMappingChange={handlePriceMappingChange}
-              onClear={handleClearPrice}
-            />
-          </div>
+          <UploadCard
+            step="①"
+            title="Stock List"
+            valueLabel="Stock Quantity"
+            valueGuess={guessStockColumn}
+            listState={stock}
+            onFileParsed={handleStockParsed}
+            onMappingChange={handleStockMappingChange}
+            onClear={handleClearStock}
+          />
+          <UploadCard
+            step="②"
+            title="Price List"
+            valueLabel="Price"
+            valueGuess={guessPriceColumn}
+            listState={price}
+            onFileParsed={handlePriceParsed}
+            onMappingChange={handlePriceMappingChange}
+            onClear={handleClearPrice}
+          />
 
           <MergedTable result={mergeResult} onUpdateStock={handleUpdateStock} />
         </>
       )}
 
-      <p className="mt-8 pb-2 text-center text-[11px] text-muted">
+      <p className="mt-8 pb-2 text-center text-[11px]" style={{ color: 'var(--muted)' }}>
         Matched by Part Number (case/whitespace-insensitive) · Stored centrally — updates from any device appear here within{' '}
         {POLL_INTERVAL_MS / 1000}s
       </p>

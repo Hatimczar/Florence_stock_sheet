@@ -19,7 +19,7 @@ async function handleLogout() {
   window.location.href = '/';
 }
 
-/** Shared macOS-window-style chrome for every admin screen: glass sidebar + glass toolbar around a scrollable content pane. */
+/** macOS-window shell ported 1:1 from the V3 design demo — glass sidebar, traffic-light titlebar, glass toolbar. */
 export function AdminShell({
   active,
   title,
@@ -41,62 +41,49 @@ export function AdminShell({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
-      <div className="relative flex flex-1 flex-col overflow-hidden rounded-window border border-border bg-surface shadow-2xl md:flex-row md:min-h-[720px]">
-        {/* Traffic-light dots — purely decorative window chrome */}
-        <div className="pointer-events-none absolute left-4 top-4 z-10 hidden gap-2 md:flex">
-          <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-          <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-          <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+      <div className="mac-window">
+        <div className="mac-titlebar">
+          <div className="mac-dots">
+            <span className="r" />
+            <span className="y" />
+            <span className="g" />
+          </div>
         </div>
 
-        <nav className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-sep bg-glass px-3 py-3 backdrop-blur-xl backdrop-saturate-150 md:w-56 md:flex-col md:items-stretch md:gap-0.5 md:overflow-visible md:border-b-0 md:border-r md:px-2.5 md:pb-4 md:pt-11">
-          <div className="mb-1 hidden items-center gap-2 px-2 pb-3 md:flex">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white p-1">
-              <Image src="/florence-icon.png" alt="" width={14} height={14} className="h-full w-full object-contain" />
+        <div className="mac-sidebar">
+          <div className="mac-brand">
+            <div className="mark">
+              <Image src="/florence-icon.png" alt="" width={14} height={14} />
             </div>
-            <span className="text-[13px] font-semibold">Florence</span>
+            <span className="name">Florence</span>
           </div>
+
+          <div className="mac-nav-section">Workspace</div>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = item.key === active;
             return (
-              <Link
-                key={item.key}
-                href={item.href}
-                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md-a px-2.5 py-1.5 text-[13px] font-medium transition-colors md:w-full ${
-                  isActive ? 'bg-accent text-white' : 'text-foreground hover:bg-white/5'
-                }`}
-              >
-                <Icon size={14} className={isActive ? 'text-black' : 'text-muted'} />
+              <Link key={item.key} href={item.href} className={`mac-nav-item ${isActive ? 'active' : ''}`}>
+                <Icon />
                 {item.label}
-                {item.key === 'customers' && pendingCount > 0 && (
-                  <span
-                    className={`ml-auto rounded-pill px-1.5 py-0.5 text-[10px] font-bold ${
-                      isActive ? 'bg-black/20 text-black' : 'bg-warn-bg text-warn'
-                    }`}
-                  >
-                    {pendingCount}
-                  </span>
-                )}
+                <span className="sp" />
+                {item.key === 'customers' && pendingCount > 0 && <span className="count">{pendingCount}</span>}
               </Link>
             );
           })}
-        </nav>
+        </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="sticky top-0 z-[5] flex shrink-0 items-center justify-between gap-3 border-b border-sep bg-glass px-4 py-3 backdrop-blur-xl backdrop-saturate-150 md:mt-11 md:px-5">
-            <h2 className="truncate text-sm font-semibold">{title}</h2>
-            <div className="flex shrink-0 items-center gap-2">
+        <div className="mac-main">
+          <div className="mac-toolbar">
+            <h2>{title}</h2>
+            <div className="toolbar-actions">
               {toolbarActions}
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-md-a border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface-muted"
-              >
-                <LogOut size={13} /> <span className="hidden sm:inline">Log Out</span>
+              <button className="toolbar-btn" onClick={handleLogout}>
+                <LogOut /> Log Out
               </button>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
+          <div className="mac-scroll">{children}</div>
         </div>
       </div>
     </div>
