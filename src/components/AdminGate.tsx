@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { FlorenceLogo } from './FlorenceLogo';
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const [checking, setChecking] = useState(true);
@@ -56,6 +57,9 @@ export function AdminGate({ children }: { children: ReactNode }) {
           <ThemeToggle />
         </div>
         <div className="mb-6" style={{ textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <FlorenceLogo size={32} />
+          </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em' }}>
             Florence <span style={{ color: 'var(--accent)' }}>Admin</span>
           </h1>

@@ -42,7 +42,18 @@
   --r-pill: 999px;
 }
 
+.brand-logo-dark {
+  display: none;
+}
+
 @media (prefers-color-scheme: dark) {
+  .brand-logo-light {
+    display: none;
+  }
+  .brand-logo-dark {
+    display: inline-block;
+  }
+
   :root {
     --background: #000000;
     --surface: #1c1c1e;
@@ -68,6 +79,19 @@
     --glass-highlight: rgba(255, 255, 255, 0.12);
     --glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.5);
   }
+}
+
+:root[data-theme='dark'] .brand-logo-light {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo-dark {
+  display: inline-block;
+}
+:root[data-theme='light'] .brand-logo-light {
+  display: inline-block;
+}
+:root[data-theme='light'] .brand-logo-dark {
+  display: none;
 }
 
 :root[data-theme='dark'] {
