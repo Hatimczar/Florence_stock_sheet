@@ -92,7 +92,7 @@ export function MergedTable({
         <button
           onClick={() => downloadMergedCSV(`florence-stock-sheet-${new Date().toISOString().slice(0, 10)}.csv`, result.rows)}
           disabled={result.rows.length === 0}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
         >
           <Download size={14} /> Export CSV
         </button>

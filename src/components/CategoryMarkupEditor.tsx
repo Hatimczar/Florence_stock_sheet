@@ -83,7 +83,7 @@ export function CategoryMarkupEditor({
         />
         <button
           onClick={applyToAll}
-          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black hover:opacity-90"
+          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
         >
           Apply to All
         </button>

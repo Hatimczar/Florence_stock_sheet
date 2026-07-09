@@ -77,7 +77,7 @@ function CatalogContent() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="flex items-center gap-1.5 rounded-md-a bg-accent px-2.5 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-md-a bg-accent px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
         >
           <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
           <span className="hidden sm:inline">{syncing ? 'Syncing…' : 'Sync from IT4Profit'}</span>

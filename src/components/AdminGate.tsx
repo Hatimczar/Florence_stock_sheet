@@ -75,7 +75,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
           <button
             onClick={handleLogin}
             disabled={loggingIn}
-            className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-black disabled:opacity-50"
+            className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {loggingIn ? 'Checking…' : 'Unlock'}
           </button>

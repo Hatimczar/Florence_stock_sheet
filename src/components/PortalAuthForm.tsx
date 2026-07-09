@@ -117,13 +117,13 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
       <div className="mb-4 flex rounded-lg border border-border bg-surface-muted p-1">
         <button
           onClick={() => switchMode('signin')}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signin' ? 'bg-accent text-black' : 'text-muted'}`}
+          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signin' ? 'bg-accent text-white' : 'text-muted'}`}
         >
           Sign In
         </button>
         <button
           onClick={() => switchMode('signup')}
-          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signup' ? 'bg-accent text-black' : 'text-muted'}`}
+          className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-colors ${mode === 'signup' ? 'bg-accent text-white' : 'text-muted'}`}
         >
           Sign Up
         </button>
@@ -169,7 +169,7 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
         <button
           onClick={mode === 'signin' ? handleLogin : handleSignup}
           disabled={busy}
-          className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-black disabled:opacity-50"
+          className="mt-4 w-full rounded-lg bg-accent py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Request Access'}
         </button>

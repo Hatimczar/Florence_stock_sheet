@@ -90,7 +90,7 @@ function CustomersContent() {
           <TextInput readOnly value={portalUrl} className="flex-1" />
           <button
             onClick={handleCopyLink}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-black"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white"
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? 'Copied' : 'Copy'}
@@ -151,7 +151,7 @@ function CustomersContent() {
         <button
           onClick={handleCreate}
           disabled={creating}
-          className="mt-4 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+          className="mt-4 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           <UserPlus size={15} /> {creating ? 'Creating…' : 'Create Customer'}
         </button>

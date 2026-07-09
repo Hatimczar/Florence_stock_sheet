@@ -123,7 +123,7 @@ export function CustomerRow({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
         >
           <Check size={14} /> Save
         </button>

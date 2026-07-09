@@ -64,7 +64,7 @@ export function AdminShell({
                 key={item.key}
                 href={item.href}
                 className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md-a px-2.5 py-1.5 text-[13px] font-medium transition-colors md:w-full ${
-                  isActive ? 'bg-accent text-black' : 'text-foreground hover:bg-white/5'
+                  isActive ? 'bg-accent text-white' : 'text-foreground hover:bg-white/5'
                 }`}
               >
                 <Icon size={14} className={isActive ? 'text-black' : 'text-muted'} />

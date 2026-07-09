@@ -338,7 +338,7 @@ export default function PortalClient() {
                   onClick={() => toggleBrand(brand)}
                   className={
                     active
-                      ? 'flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-xs font-semibold text-black'
+                      ? 'flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-xs font-semibold text-white'
                       : 'flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-muted hover:bg-surface'
                   }
                 >

@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f5f7;
+  --background: #f2f2f7;
   --surface: #ffffff;
   --surface-muted: #f9fafb;
   --border-color: #e5e7eb;
-  --foreground: #14151a;
-  --muted: #6b7280;
-  --accent: #b8860b;
-  --accent-strong: #92660a;
-  --profit: #0f9d58;
-  --profit-bg: #e6f6ec;
-  --loss: #d93025;
-  --loss-bg: #fdecea;
-  --warn: #b7791f;
-  --warn-bg: #fdf3d9;
+  --foreground: #000000;
+  --muted: rgba(60, 60, 67, 0.6);
+  /* Apple systemBlue — matches the V3 design demo's default "Florence" brand accent */
+  --accent: #007aff;
+  --accent-strong: #0060df;
+  /* Apple systemGreen / systemRed / systemOrange */
+  --profit: #34c759;
+  --profit-bg: rgba(52, 199, 89, 0.15);
+  --loss: #ff3b30;
+  --loss-bg: rgba(255, 59, 48, 0.15);
+  --warn: #ff9500;
+  --warn-bg: rgba(255, 149, 0, 0.15);
 
   /* Apple-inspired structural tokens — materials, hairlines, concentric radii */
   --sep: rgba(0, 0, 0, 0.08);
   --glass-fill: rgba(255, 255, 255, 0.72);
   --glass-fill-strong: rgba(255, 255, 255, 0.86);
   --glass-border: rgba(0, 0, 0, 0.08);
-  --r-window: 18px;
+  --r-window: 14px;
   --r-lg: 16px;
   --r-md: 12px;
   --r-sm: 9px;
@@ -29,27 +31,29 @@
 }
 
 .dark {
-  --background: #0b0c0f;
-  --surface: #15161b;
-  --surface-muted: #1b1c22;
-  --border-color: #2a2b32;
-  --foreground: #f2f2f4;
-  --muted: #9a9ba3;
-  --accent: #d4af37;
-  --accent-strong: #e6c14f;
-  --profit: #34d399;
-  --profit-bg: rgba(52, 211, 153, 0.12);
-  --loss: #f87171;
-  --loss-bg: rgba(248, 113, 113, 0.12);
-  --warn: #fbbf24;
-  --warn-bg: rgba(251, 191, 36, 0.12);
+  --background: #000000;
+  --surface: #1c1c1e;
+  --surface-muted: #232326;
+  --border-color: #2c2c2e;
+  --foreground: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  /* Apple systemBlue (dark) — matches the V3 design demo's default "Florence" brand accent */
+  --accent: #0a84ff;
+  --accent-strong: #409cff;
+  /* Apple systemGreen / systemRed / systemOrange (dark) */
+  --profit: #30d158;
+  --profit-bg: rgba(48, 209, 88, 0.18);
+  --loss: #ff453a;
+  --loss-bg: rgba(255, 69, 58, 0.18);
+  --warn: #ff9f0a;
+  --warn-bg: rgba(255, 159, 10, 0.18);
 
   /* Apple-inspired structural tokens — materials, hairlines, concentric radii */
   --sep: rgba(255, 255, 255, 0.09);
   --glass-fill: rgba(28, 29, 36, 0.7);
   --glass-fill-strong: rgba(22, 23, 29, 0.88);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --r-window: 18px;
+  --r-window: 14px;
   --r-lg: 16px;
   --r-md: 12px;
   --r-sm: 9px;
@@ -85,12 +89,14 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* SF Pro on Apple devices (system font, no license/download needed), Inter everywhere else — same technique as the V3 design demo */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
   background: var(--accent);
-  color: #14151a;
+  color: #ffffff;
 }
 
 * {
