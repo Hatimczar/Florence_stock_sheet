@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowLeft, LogOut, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { CatalogItem } from '@/lib/catalog';
 import { fetchAdminCatalog, syncCatalogApi } from '@/lib/catalogApi';
 import { Card, SectionHeader, StatCard, SelectInput, Badge } from '@/components/ui';
 import { AdminGate } from '@/components/AdminGate';
+import { AdminShell } from '@/components/AdminShell';
 
 const AVAIL_LABEL: Record<string, string> = { yes: 'Available', 'on demand': 'On Demand', limited: 'Limited' };
 const AVAIL_TONE: Record<string, 'profit' | 'warn' | 'loss'> = { yes: 'profit', 'on demand': 'warn', limited: 'loss' };
@@ -52,11 +51,6 @@ function CatalogContent() {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/admin-auth/logout', { method: 'POST' });
-    window.location.reload();
-  };
-
   const categories = useMemo(() => Array.from(new Set(items.map((i) => i.group).filter(Boolean))).sort(), [items]);
 
   const filtered = useMemo(
@@ -76,43 +70,23 @@ function CatalogContent() {
   }, [filtered]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-            <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Vendor <span className="text-accent">Catalog</span>
-            </h1>
-            <p className="text-xs text-muted sm:text-sm">
-              {syncedAt ? `Synced from IT4Profit ${new Date(syncedAt).toLocaleString()}` : 'Not synced yet'}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
-          >
-            <ArrowLeft size={14} /> Back
-          </Link>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-black disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Syncing…' : 'Sync from IT4Profit'}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
-          >
-            <LogOut size={14} /> Log Out
-          </button>
-        </div>
-      </header>
+    <AdminShell
+      active="catalog"
+      title="Vendor Catalog"
+      toolbarActions={
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-1.5 rounded-md-a bg-accent px-2.5 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
+        >
+          <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">{syncing ? 'Syncing…' : 'Sync from IT4Profit'}</span>
+        </button>
+      }
+    >
+      <p className="mb-4 text-xs text-muted">
+        {syncedAt ? `Synced from IT4Profit ${new Date(syncedAt).toLocaleString()}` : 'Not synced yet'}
+      </p>
 
       {error && <p className="mb-3 text-xs text-loss">{error}</p>}
 
@@ -203,6 +177,6 @@ function CatalogContent() {
           </div>
         </Card>
       )}
-    </div>
+    </AdminShell>
   );
 }

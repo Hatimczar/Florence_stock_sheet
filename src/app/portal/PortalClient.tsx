@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, ShoppingBag } from 'lucide-react';
 import { Card, SectionHeader, StatCard, Badge, SelectInput } from '@/components/ui';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
@@ -56,6 +55,21 @@ export default function PortalClient() {
   const [catalogCategory, setCatalogCategory] = useState('all');
   const [catalogAvail, setCatalogAvail] = useState('all');
   const [catalogSelected, setCatalogSelected] = useState<Set<string>>(new Set());
+
+  const [navScrolled, setNavScrolled] = useState(false);
+  const largeTitleRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const NAV_HEIGHT = 52;
+    const onScroll = () => {
+      const el = largeTitleRef.current;
+      if (!el) return;
+      setNavScrolled(el.getBoundingClientRect().bottom <= NAV_HEIGHT);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [customer]);
 
   useEffect(() => {
     (async () => {
@@ -255,12 +269,6 @@ export default function PortalClient() {
     window.open(url, '_blank');
   };
 
-  const logoBadge = (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-      <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
-    </div>
-  );
-
   if (checkingSession) {
     return <div className="flex flex-1 items-center justify-center text-sm text-muted">Loading…</div>;
   }
@@ -277,7 +285,7 @@ export default function PortalClient() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6">
+    <div className="flex w-full flex-1 flex-col">
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col-reverse items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
         {toasts.map((t) => (
           <div
@@ -290,24 +298,35 @@ export default function PortalClient() {
         ))}
       </div>
 
-      <header className="mb-6 flex items-center gap-3">
-        {logoBadge}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-            Florence <span className="text-accent">Client Portal</span>
-          </h1>
-          <p className="truncate text-xs text-muted">
-            {customer.name} · {customer.email}
-          </p>
-        </div>
+      {/* Collapsing large-title nav — the small inline title fades in once the large title scrolls past. */}
+      <div
+        className={`sticky top-0 z-30 flex h-[52px] shrink-0 items-center justify-center border-b transition-colors ${
+          navScrolled ? 'border-sep bg-glass backdrop-blur-xl backdrop-saturate-150' : 'border-transparent bg-transparent'
+        }`}
+      >
+        <span
+          className={`absolute text-[15px] font-semibold transition-opacity duration-150 ${navScrolled ? 'opacity-100' : 'opacity-0'}`}
+        >
+          Client Portal
+        </span>
         <button
           onClick={handleLogout}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
+          className="absolute right-4 flex items-center gap-1 text-xs font-medium text-accent"
         >
-          <LogOut size={14} /> Log Out
+          <LogOut size={13} /> Log Out
         </button>
-      </header>
+      </div>
 
+      <div ref={largeTitleRef} className="mx-auto w-full max-w-4xl px-4 pb-3 pt-1 sm:px-6">
+        <h1 className="text-[28px] font-bold tracking-tight sm:text-[32px]">
+          Florence <span className="text-accent">Client Portal</span>
+        </h1>
+        <p className="mt-0.5 text-sm text-muted">
+          {customer.name} · {customer.email}
+        </p>
+      </div>
+
+      <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-8 sm:px-6">
       {customer.enabledBrands.length > 0 && (
         <>
           <div className="mb-3 flex flex-wrap gap-2">
@@ -508,6 +527,7 @@ export default function PortalClient() {
           </table>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
