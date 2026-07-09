@@ -275,7 +275,7 @@ export default function PortalClient() {
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col" style={{ position: 'relative' }}>
+    <div className="flex w-full min-w-0 flex-1 flex-col" style={{ position: 'relative' }}>
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col-reverse items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
         {toasts.map((t) => (
           <div

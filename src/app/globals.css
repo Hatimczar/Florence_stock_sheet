@@ -98,6 +98,11 @@
   --font-sans: var(--font-inter);
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -601,6 +606,8 @@ body {
   background: transparent;
   border-bottom: 1px solid transparent;
   transition: background-color 0.2s ease, border-color 0.2s ease, backdrop-filter 0.2s ease;
+  min-width: 0;
+  width: 100%;
 }
 .ios-nav.scrolled {
   background: var(--glass-fill);
@@ -639,6 +646,9 @@ body {
   padding: 4px 20px 12px;
   max-width: 900px;
   margin: 0 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 .ios-large-title h1 {
   font-size: 34px;
@@ -655,6 +665,9 @@ body {
   max-width: 900px;
   margin: 0 auto;
   padding: 4px 20px 60px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ios-group {
@@ -847,6 +860,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
+  max-width: 100%;
 }
 .filter-select {
   appearance: none;
@@ -864,6 +878,14 @@ body {
   border-radius: var(--r-sm);
   padding: 7px 30px 7px 12px;
   cursor: pointer;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+@media (max-width: 480px) {
+  .filter-select {
+    width: 100%;
+  }
 }
 .filter-select:focus {
   outline: none;
