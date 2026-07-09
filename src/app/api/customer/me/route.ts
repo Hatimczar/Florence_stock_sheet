@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
       email: customer.email,
       companyName: customer.companyName,
       enabledBrands: customer.enabledBrands,
+      appleShowPrices: customer.appleShowPrices,
     },
   });
 }

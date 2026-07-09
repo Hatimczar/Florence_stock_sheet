@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface CustomerInfo {
   name: string;
@@ -94,12 +95,15 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <ThemeToggle />
+      </div>
       <div className="mb-6" style={{ textAlign: 'center' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em' }}>
           Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
         </h1>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-          {mode === 'signin' ? 'Sign in to check stock and pricing' : 'Request access to check stock and pricing'}
+          {mode === 'signin' ? 'Sign in to check stock availability' : 'Request access to check stock availability'}
         </p>
       </div>
 

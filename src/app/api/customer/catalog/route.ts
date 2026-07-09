@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentCustomer } from '@/lib/session';
-import { getCatalog, CUSTOMER_AVAIL_LABEL } from '@/lib/catalog';
+import { getCatalog, CUSTOMER_AVAIL_LABEL, MANUAL_STOCK_VENDOR } from '@/lib/catalog';
+import { getManualStockCatalogItems } from '@/lib/customerPricing';
 import { CustomerCatalogItem } from '@/lib/catalogApi';
 
 export const dynamic = 'force-dynamic';
@@ -9,21 +10,35 @@ export async function GET(req: NextRequest) {
   const customer = await getCurrentCustomer(req);
   if (!customer) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
 
-  const catalog = await getCatalog();
-  if (!catalog || customer.enabledBrands.length === 0) {
+  if (customer.enabledBrands.length === 0) {
     return NextResponse.json({ items: [] as CustomerCatalogItem[] });
   }
-
   const enabled = new Set(customer.enabledBrands);
-  const items: CustomerCatalogItem[] = catalog.items
-    .filter((item) => enabled.has(item.vendor) && CUSTOMER_AVAIL_LABEL[item.avail])
-    .map((item) => ({
-      wic: item.wic,
-      description: item.description,
-      vendor: item.vendor,
-      group: item.group,
-      availability: CUSTOMER_AVAIL_LABEL[item.avail],
-    }));
+
+  const items: CustomerCatalogItem[] = [];
+
+  // Apple only shows up here (availability-only, no price) when the admin has turned its pricing off for this
+  // customer. Otherwise it's served priced via /api/customer/browse instead.
+  if (enabled.has(MANUAL_STOCK_VENDOR) && !customer.appleShowPrices) {
+    const manualItems = await getManualStockCatalogItems();
+    for (const item of manualItems) {
+      items.push({ wic: item.wic, description: item.description, vendor: MANUAL_STOCK_VENDOR, group: item.group, availability: item.availability });
+    }
+  }
+
+  const catalog = await getCatalog();
+  if (catalog) {
+    for (const item of catalog.items) {
+      if (!enabled.has(item.vendor) || !CUSTOMER_AVAIL_LABEL[item.avail]) continue;
+      items.push({
+        wic: item.wic,
+        description: item.description,
+        vendor: item.vendor,
+        group: item.group,
+        availability: CUSTOMER_AVAIL_LABEL[item.avail],
+      });
+    }
+  }
 
   return NextResponse.json({ items });
 }

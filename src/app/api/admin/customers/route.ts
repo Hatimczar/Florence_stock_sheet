@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     password: string;
     categoryMarkups: CategoryMarkup[];
     enabledBrands?: string[];
+    appleShowPrices?: boolean;
   };
 
   if (!body.email || !body.password || !Array.isArray(body.categoryMarkups)) {

@@ -14,6 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     password?: string;
     categoryMarkups?: CategoryMarkup[];
     enabledBrands?: string[];
+    appleShowPrices?: boolean;
   };
 
   const customer = await updateCustomer(id, body);

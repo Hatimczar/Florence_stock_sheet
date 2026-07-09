@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const [checking, setChecking] = useState(true);
@@ -51,6 +52,9 @@ export function AdminGate({ children }: { children: ReactNode }) {
   if (!authenticated) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-10">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <ThemeToggle />
+        </div>
         <div className="mb-6" style={{ textAlign: 'center' }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em' }}>
             Florence <span style={{ color: 'var(--accent)' }}>Admin</span>

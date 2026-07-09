@@ -24,37 +24,67 @@
   --warn: #ff9500;
   --warn-bg: rgba(255, 149, 0, 0.15);
 
-  /* Apple-inspired structural tokens — materials, hairlines, concentric radii */
-  --sep: rgba(0, 0, 0, 0.08);
+  /* Structural tokens — ported 1:1 from the V3 design demo's light palette */
+  --sep: rgba(60, 60, 67, 0.29);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+  --fill: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.12);
   --glass-fill: rgba(255, 255, 255, 0.72);
   --glass-fill-strong: rgba(255, 255, 255, 0.86);
   --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(20, 25, 40, 0.14);
   --r-window: 14px;
+  --r-xl: 20px;
   --r-lg: 16px;
   --r-md: 12px;
   --r-sm: 9px;
   --r-pill: 999px;
 }
 
-.dark {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --surface: #1c1c1e;
+    --surface-muted: #232326;
+    --border-color: #2c2c2e;
+    --foreground: #ffffff;
+    --muted: rgba(235, 235, 245, 0.6);
+    --accent: #0a84ff;
+    --accent-strong: #409cff;
+    --profit: #30d158;
+    --profit-bg: rgba(48, 209, 88, 0.18);
+    --loss: #ff453a;
+    --loss-bg: rgba(255, 69, 58, 0.18);
+    --warn: #ff9f0a;
+    --warn-bg: rgba(255, 159, 10, 0.18);
+    --sep: rgba(84, 84, 88, 0.6);
+    --label-tertiary: rgba(235, 235, 245, 0.3);
+    --fill: rgba(120, 120, 128, 0.36);
+    --fill-secondary: rgba(120, 120, 128, 0.24);
+    --glass-fill: rgba(44, 44, 50, 0.55);
+    --glass-fill-strong: rgba(54, 54, 62, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.14);
+    --glass-highlight: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
   --background: #000000;
   --surface: #1c1c1e;
   --surface-muted: #232326;
   --border-color: #2c2c2e;
   --foreground: #ffffff;
   --muted: rgba(235, 235, 245, 0.6);
-  /* Apple systemBlue (dark) — matches the V3 design demo's default "Florence" brand accent */
   --accent: #0a84ff;
   --accent-strong: #409cff;
-  /* Apple systemGreen / systemRed / systemOrange (dark) */
   --profit: #30d158;
   --profit-bg: rgba(48, 209, 88, 0.18);
   --loss: #ff453a;
   --loss-bg: rgba(255, 69, 58, 0.18);
   --warn: #ff9f0a;
   --warn-bg: rgba(255, 159, 10, 0.18);
-
-  /* Structural tokens — ported 1:1 from the V3 design demo's dark palette */
   --sep: rgba(84, 84, 88, 0.6);
   --label-tertiary: rgba(235, 235, 245, 0.3);
   --fill: rgba(120, 120, 128, 0.36);
@@ -64,12 +94,32 @@
   --glass-border: rgba(255, 255, 255, 0.14);
   --glass-highlight: rgba(255, 255, 255, 0.12);
   --glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.5);
-  --r-window: 14px;
-  --r-xl: 20px;
-  --r-lg: 16px;
-  --r-md: 12px;
-  --r-sm: 9px;
-  --r-pill: 999px;
+}
+
+:root[data-theme='light'] {
+  --background: #f2f2f7;
+  --surface: #ffffff;
+  --surface-muted: #f9fafb;
+  --border-color: #e5e7eb;
+  --foreground: #000000;
+  --muted: rgba(60, 60, 67, 0.6);
+  --accent: #007aff;
+  --accent-strong: #0060df;
+  --profit: #34c759;
+  --profit-bg: rgba(52, 199, 89, 0.15);
+  --loss: #ff3b30;
+  --loss-bg: rgba(255, 59, 48, 0.15);
+  --warn: #ff9500;
+  --warn-bg: rgba(255, 149, 0, 0.15);
+  --sep: rgba(60, 60, 67, 0.29);
+  --label-tertiary: rgba(60, 60, 67, 0.3);
+  --fill: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.12);
+  --glass-fill: rgba(255, 255, 255, 0.72);
+  --glass-fill-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 8px 24px rgba(20, 25, 40, 0.14);
 }
 
 @theme inline {
@@ -140,39 +190,6 @@ body {
   display: flex;
   min-height: 760px;
 }
-.mac-titlebar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 38px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  pointer-events: none;
-}
-.mac-dots {
-  display: flex;
-  gap: 8px;
-}
-.mac-dots span {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.mac-dots .r {
-  background: #ff5f57;
-}
-.mac-dots .y {
-  background: #febc2e;
-}
-.mac-dots .g {
-  background: #28c840;
-}
-
 .mac-sidebar {
   width: 230px;
   flex-shrink: 0;
@@ -181,7 +198,7 @@ body {
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   backdrop-filter: blur(30px) saturate(180%);
   border-right: 1px solid var(--glass-border);
-  padding: 46px 10px 14px;
+  padding: 14px 10px;
   display: flex;
   flex-direction: column;
 }
@@ -277,7 +294,6 @@ body {
   gap: 10px;
   flex-wrap: wrap;
   padding: 8px 18px;
-  margin-top: 38px;
   background: var(--glass-fill);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   backdrop-filter: blur(30px) saturate(180%);
@@ -976,7 +992,7 @@ body {
     width: 100%;
     flex-direction: row;
     align-items: center;
-    padding: 46px 10px 10px;
+    padding: 10px;
     overflow-x: auto;
   }
   .mac-nav-section {

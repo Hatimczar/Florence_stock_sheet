@@ -64,3 +64,35 @@ export async function lookupPartNumberForCustomer(
 export async function browsePartsForCustomer(customer: Pick<Customer, 'categoryMarkups'>): Promise<CustomerLookupResult[]> {
   return getVisiblePartsForCustomer(customer);
 }
+
+export interface ManualStockCatalogItem {
+  wic: string;
+  description: string;
+  group: string;
+  availability: 'Available';
+}
+
+/**
+ * The manually-uploaded Stock/Price sheet, reshaped into the same brand-catalog
+ * item format as the IT4Profit feed — exposed to customers under the "Apple"
+ * brand toggle. No price ever comes out of this; only parts with stock > 0 are
+ * included (unstocked/unknown-stock parts are never shown, same as "no" avail
+ * on the IT4Profit side).
+ */
+export async function getManualStockCatalogItems(): Promise<ManualStockCatalogItem[]> {
+  const [stock, price] = await Promise.all([getStoredList('stock'), getStoredList('price')]);
+  if (!stock) return [];
+
+  const merged = price
+    ? mergeStockAndPrice(stock.file.rows, stock.mapping, price.file.rows, price.mapping)
+    : mergeStockAndPrice(stock.file.rows, stock.mapping, [], stock.mapping);
+
+  return merged.rows
+    .filter((row) => row.stock !== null && row.stock > 0)
+    .map((row) => ({
+      wic: row.partNumber,
+      description: row.description,
+      group: row.category,
+      availability: 'Available' as const,
+    }));
+}

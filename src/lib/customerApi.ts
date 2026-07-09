@@ -21,6 +21,7 @@ export async function createCustomerApi(params: {
   password: string;
   categoryMarkups: CategoryMarkup[];
   enabledBrands?: string[];
+  appleShowPrices?: boolean;
 }): Promise<PublicCustomer> {
   const res = await fetch('/api/admin/customers', {
     method: 'POST',
@@ -34,7 +35,13 @@ export async function createCustomerApi(params: {
 
 export async function updateCustomerApi(
   id: string,
-  patch: { name?: string; password?: string; categoryMarkups?: CategoryMarkup[]; enabledBrands?: string[] }
+  patch: {
+    name?: string;
+    password?: string;
+    categoryMarkups?: CategoryMarkup[];
+    enabledBrands?: string[];
+    appleShowPrices?: boolean;
+  }
 ): Promise<PublicCustomer> {
   const res = await fetch(`/api/admin/customers/${id}`, {
     method: 'PATCH',

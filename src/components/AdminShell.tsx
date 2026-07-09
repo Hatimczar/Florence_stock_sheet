@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Package, PackageSearch, Users, LogOut } from 'lucide-react';
 import { fetchCustomers } from '@/lib/customerApi';
+import { ThemeToggle } from './ThemeToggle';
 
 type AdminNavKey = 'stock' | 'catalog' | 'customers';
 
@@ -19,7 +20,7 @@ async function handleLogout() {
   window.location.href = '/';
 }
 
-/** macOS-window shell ported 1:1 from the V3 design demo — glass sidebar, traffic-light titlebar, glass toolbar. */
+/** Clean, minimal app shell inspired by the V3 design demo — glass sidebar + glass toolbar. */
 export function AdminShell({
   active,
   title,
@@ -42,14 +43,6 @@ export function AdminShell({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
       <div className="mac-window">
-        <div className="mac-titlebar">
-          <div className="mac-dots">
-            <span className="r" />
-            <span className="y" />
-            <span className="g" />
-          </div>
-        </div>
-
         <div className="mac-sidebar">
           <div className="mac-brand">
             <div className="mark">
@@ -78,6 +71,7 @@ export function AdminShell({
             <h2>{title}</h2>
             <div className="toolbar-actions">
               {toolbarActions}
+              <ThemeToggle />
               <button className="toolbar-btn" onClick={handleLogout}>
                 <LogOut /> Log Out
               </button>

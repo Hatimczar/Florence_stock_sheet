@@ -19,11 +19,11 @@
 	],
 	"kv_namespaces": [
 		{
-			// Placeholder — do NOT point this at production's namespace
-			// (40e606db6541491cadc1a8d7a4c99137). Create a fresh KV namespace for this
-			// test copy with `wrangler kv namespace create STOCK_SHEET_KV` before deploying.
+			// Its own namespace ("STOCK_SHEET_KV_V3_TEST") — deliberately NOT
+			// production's namespace (40e606db6541491cadc1a8d7a4c99137), so this test
+			// deploy never reads or writes real production data.
 			"binding": "STOCK_SHEET_KV",
-			"id": "REPLACE_WITH_A_NEW_TEST_KV_NAMESPACE_ID"
+			"id": "e4486f1e931c4e7d90f651e94d500a1b"
 		}
 	]
 	// No custom_domain route on purpose — this repo must never claim

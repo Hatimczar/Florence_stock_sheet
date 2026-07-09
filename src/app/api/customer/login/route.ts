@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     email: customer.email,
     companyName: customer.companyName,
     enabledBrands: customer.enabledBrands,
+    appleShowPrices: customer.appleShowPrices,
   });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,

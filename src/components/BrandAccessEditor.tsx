@@ -1,8 +1,8 @@
 'use client';
 
-import { Check, X } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
-/** Toggle chips granting a customer access to specific IT4Profit vendor/brand catalogs. No pricing is ever shown to customers. */
+/** Toggle chips granting a customer access to specific brand catalogs (IT4Profit vendors + "Apple" for the manual sheet). No pricing is ever shown to customers. */
 export function BrandAccessEditor({
   vendors,
   value,
@@ -26,7 +26,7 @@ export function BrandAccessEditor({
         const enabled = value.includes(vendor);
         return (
           <button key={vendor} type="button" onClick={() => toggle(vendor)} className={`perm-chip ${enabled ? 'on' : 'off'}`}>
-            {enabled ? <Check /> : <X />} {vendor}
+            <BrandLogo vendor={vendor} size={14} /> {vendor}
           </button>
         );
       })}

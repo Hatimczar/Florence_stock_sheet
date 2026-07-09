@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Tag } from 'lucide-react';
 import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
 import { updateCustomerApi, deleteCustomerApi } from '@/lib/customerApi';
+import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 import { CategoryMarkupEditor } from './CategoryMarkupEditor';
 import { BrandAccessEditor } from './BrandAccessEditor';
+import { BrandLogo } from './BrandLogo';
 
 function formatMarkup(m: CategoryMarkup): string {
   return m.markupType === 'percent' ? `${(m.markupValue * 100).toFixed(1)}%` : `AED ${m.markupValue.toFixed(2)} flat`;
@@ -34,9 +36,12 @@ export function CustomerRow({
   const [editing, setEditing] = useState(false);
   const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>(customer.categoryMarkups);
   const [enabledBrands, setEnabledBrands] = useState<string[]>(customer.enabledBrands);
+  const [appleShowPrices, setAppleShowPrices] = useState(customer.appleShowPrices);
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasApple = enabledBrands.includes(MANUAL_STOCK_VENDOR);
 
   const handleSave = async () => {
     setSaving(true);
@@ -45,6 +50,7 @@ export function CustomerRow({
       const updated = await updateCustomerApi(customer.id, {
         categoryMarkups,
         enabledBrands,
+        appleShowPrices,
         ...(newPassword ? { password: newPassword } : {}),
       });
       onUpdated(updated);
@@ -106,10 +112,15 @@ export function CustomerRow({
               <span className="pill pill-orange">No brands enabled</span>
             ) : (
               customer.enabledBrands.map((b) => (
-                <span key={b} className="pill pill-green">
-                  {b}
+                <span key={b} className="pill pill-green" style={{ gap: 4 }}>
+                  <BrandLogo vendor={b} size={12} /> {b}
                 </span>
               ))
+            )}
+            {customer.enabledBrands.includes(MANUAL_STOCK_VENDOR) && (
+              <span className={`pill ${customer.appleShowPrices ? 'pill-green' : 'pill-orange'}`} style={{ gap: 4 }}>
+                <Tag size={11} /> Apple prices: {customer.appleShowPrices ? 'On' : 'Off'}
+              </span>
             )}
           </div>
         </>
@@ -127,11 +138,21 @@ export function CustomerRow({
           <div className="perm-label">Categories &amp; markup</div>
           <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
           <div className="perm-label" style={{ marginTop: 12 }}>
-            Vendor catalog brands (IT4Profit) — no price shown to customers
+            Vendor catalog brands — Apple shows real pricing (with markup); every other brand is availability only
           </div>
           <div className="perm-row">
             <BrandAccessEditor vendors={vendors} value={enabledBrands} onChange={setEnabledBrands} />
           </div>
+          {hasApple && (
+            <button
+              type="button"
+              onClick={() => setAppleShowPrices((v) => !v)}
+              className={`perm-chip ${appleShowPrices ? 'on' : 'off'}`}
+              style={{ marginTop: 8 }}
+            >
+              <Tag size={13} /> Apple prices: {appleShowPrices ? 'On (customer sees price)' : 'Off (availability only)'}
+            </button>
+          )}
           {error && <p style={{ marginTop: 8, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
             <button onClick={handleSave} disabled={saving} className="toolbar-btn primary">
