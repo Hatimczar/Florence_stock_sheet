@@ -1,18 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
-import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, ShoppingBag } from 'lucide-react';
-import { Card, SectionHeader, StatCard, Badge } from '@/components/ui';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
+import { BrandLogo } from '@/components/BrandLogo';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { fetchCustomerCatalog, CustomerCatalogItem } from '@/lib/catalogApi';
+
+const MANUAL_STOCK_VENDOR = 'Apple';
 
 interface CustomerInfo {
   name: string;
   email: string;
   companyName: string;
+  enabledBrands: string[];
+  appleShowPrices: boolean;
 }
 
-interface LookupResult {
+interface PricedItem {
   partNumber: string;
   description: string;
   category: string;
@@ -20,26 +25,49 @@ interface LookupResult {
   price: number;
 }
 
-interface SoldToast {
-  id: string;
-  text: string;
-}
-
 const WHATSAPP_NUMBER = '971525348090';
 const STOCK_POLL_INTERVAL_MS = 15_000;
-const TOAST_LIFETIME_MS = 6_000;
+
+const AVAIL_CLASS: Record<string, string> = {
+  Available: 'avail-yes',
+  'On Demand': 'avail-ondemand',
+  Limited: 'avail-limited',
+};
 
 export default function PortalClient() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
 
-  const [items, setItems] = useState<LookupResult[]>([]);
-  const [loadingItems, setLoadingItems] = useState(false);
-  const [itemsError, setItemsError] = useState<string | null>(null);
+  // Availability-only catalog — every brand except Apple (Apple joins this list only when its prices are off).
+  const [catalogItems, setCatalogItems] = useState<CustomerCatalogItem[]>([]);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [toasts, setToasts] = useState<SoldToast[]>([]);
-  const prevStockRef = useRef<Map<string, number> | null>(null);
+  const [catalogCategory, setCatalogCategory] = useState('all');
+  const [catalogAvail, setCatalogAvail] = useState('all');
+  const [catalogSelected, setCatalogSelected] = useState<Set<string>>(new Set());
+
+  // Priced Apple items — real stock + this customer's markup-adjusted price.
+  const [pricedItems, setPricedItems] = useState<PricedItem[]>([]);
+  const [loadingPriced, setLoadingPriced] = useState(false);
+  const [pricedSearch, setPricedSearch] = useState('');
+  const [pricedCategory, setPricedCategory] = useState('all');
+  const [pricedSelected, setPricedSelected] = useState<Set<string>>(new Set());
+
+  const [navScrolled, setNavScrolled] = useState(false);
+  const largeTitleRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const NAV_HEIGHT = 52;
+    const onScroll = () => {
+      const el = largeTitleRef.current;
+      if (!el) return;
+      setNavScrolled(el.getBoundingClientRect().bottom <= NAV_HEIGHT);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [customer]);
 
   useEffect(() => {
     (async () => {
@@ -47,82 +75,68 @@ export default function PortalClient() {
         const res = await fetch('/api/customer/me');
         const data = (res.ok ? await res.json() : { customer: null }) as { customer: CustomerInfo | null };
         setCustomer(data.customer);
+        if (data.customer) setActiveBrand(data.customer.enabledBrands[0] ?? null);
       } finally {
         setCheckingSession(false);
       }
     })();
   }, []);
 
-  const loadItems = async (silent = false) => {
-    if (!silent) {
-      setItemsError(null);
-      setLoadingItems(true);
+  const loadCatalog = async (silent = false) => {
+    if (!silent) setLoadingCatalog(true);
+    try {
+      const catalog = await fetchCustomerCatalog();
+      setCatalogItems(catalog);
+    } finally {
+      if (!silent) setLoadingCatalog(false);
     }
+  };
+
+  const loadPriced = async (silent = false) => {
+    if (!silent) setLoadingPriced(true);
     try {
       const res = await fetch('/api/customer/browse');
-      if (res.status === 401) {
-        setCustomer(null);
-        return;
-      }
-      const data = (await res.json()) as { items: LookupResult[] };
-      setItems(data.items);
-
-      const prevStock = prevStockRef.current;
-      if (prevStock) {
-        const newToasts: SoldToast[] = [];
-        for (const item of data.items) {
-          const before = prevStock.get(item.partNumber);
-          if (before !== undefined && item.stock < before) {
-            const sold = before - item.stock;
-            newToasts.push({
-              id: `${item.partNumber}-${Date.now()}`,
-              text: `${sold} ${sold === 1 ? 'unit' : 'units'} sold — ${item.description || item.partNumber}`,
-            });
-          }
-        }
-        if (newToasts.length > 0) {
-          setToasts((prev) => [...prev, ...newToasts]);
-          newToasts.forEach((t) => {
-            setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== t.id)), TOAST_LIFETIME_MS);
-          });
-        }
-      }
-      prevStockRef.current = new Map(data.items.map((i) => [i.partNumber, i.stock]));
-    } catch {
-      if (!silent) setItemsError('Could not load stock right now. Please try again.');
+      const data = (await res.json()) as { items: PricedItem[] };
+      setPricedItems(data.items ?? []);
     } finally {
-      if (!silent) setLoadingItems(false);
+      if (!silent) setLoadingPriced(false);
     }
   };
 
   useEffect(() => {
     if (!customer) return;
-    loadItems();
-    const interval = setInterval(() => loadItems(true), STOCK_POLL_INTERVAL_MS);
+    loadCatalog();
+    loadPriced();
+    const interval = setInterval(() => {
+      loadCatalog(true);
+      loadPriced(true);
+    }, STOCK_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (i) => i.partNumber.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)
-    );
-  }, [items, search]);
-
   const handleLogout = async () => {
     await fetch('/api/customer/logout', { method: 'POST' });
     setCustomer(null);
-    setItems([]);
+    setCatalogItems([]);
+    setPricedItems([]);
+    setCatalogSelected(new Set());
+    setPricedSelected(new Set());
     setSearch('');
-    setSelected(new Set());
-    setToasts([]);
-    prevStockRef.current = null;
+    setPricedSearch('');
   };
 
-  const toggleSelected = (partNumber: string) => {
-    setSelected((prev) => {
+  const toggleCatalogSelected = (wic: string) => {
+    setCatalogSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(wic)) next.delete(wic);
+      else next.add(wic);
+      return next;
+    });
+  };
+
+  const togglePricedSelected = (partNumber: string) => {
+    setPricedSelected((prev) => {
       const next = new Set(prev);
       if (next.has(partNumber)) next.delete(partNumber);
       else next.add(partNumber);
@@ -130,179 +144,319 @@ export default function PortalClient() {
     });
   };
 
-  const allVisibleSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.partNumber));
-  const toggleSelectAllVisible = () => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        filtered.forEach((i) => next.delete(i.partNumber));
-      } else {
-        filtered.forEach((i) => next.add(i.partNumber));
-      }
-      return next;
-    });
-  };
+  const isAppleTab = activeBrand === MANUAL_STOCK_VENDOR;
+  const showApplePriced = isAppleTab && !!customer?.appleShowPrices;
 
-  const handleSendWhatsApp = () => {
-    const selectedItems = items.filter((i) => selected.has(i.partNumber));
-    if (selectedItems.length === 0) return;
+  // ---- Availability view (every brand except priced-Apple) ----
+  const brandItems = useMemo(() => catalogItems.filter((i) => i.vendor === activeBrand), [catalogItems, activeBrand]);
 
-    const lines = selectedItems.map(
-      (i, idx) =>
-        `${idx + 1}. ${i.partNumber}${i.description ? ` — ${i.description}` : ''}\n   Stock: ${i.stock} | Price: AED ${i.price.toFixed(2)}`
-    );
-    const message = [
-      `*Stock Request from ${customer!.name}${customer!.companyName ? ` (${customer!.companyName})` : ''}*`,
-      '',
-      ...lines,
-    ].join('\n');
-
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
-
-  const logoBadge = (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white p-2">
-      <Image src="/florence-icon.png" alt="Florence" width={28} height={28} className="h-full w-full object-contain" />
-    </div>
+  const catalogCategories = useMemo(
+    () => Array.from(new Set(brandItems.map((i) => i.group).filter(Boolean))).sort(),
+    [brandItems]
   );
 
+  const catalogFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return brandItems.filter(
+      (i) =>
+        (catalogCategory === 'all' || i.group === catalogCategory) &&
+        (catalogAvail === 'all' || i.availability === catalogAvail) &&
+        (!q || i.wic.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.group.toLowerCase().includes(q))
+    );
+  }, [brandItems, catalogCategory, catalogAvail, search]);
+
+  const catalogGroups = useMemo(() => {
+    const groups = new Map<string, CustomerCatalogItem[]>();
+    catalogFiltered.forEach((item) => {
+      const list = groups.get(item.group) ?? [];
+      list.push(item);
+      groups.set(item.group, list);
+    });
+    return Array.from(groups.entries());
+  }, [catalogFiltered]);
+
+  const handleSendCatalogWhatsApp = () => {
+    const selectedItems = brandItems.filter((i) => catalogSelected.has(i.wic));
+    if (selectedItems.length === 0) return;
+    const lines = selectedItems.map(
+      (i, idx) => `${idx + 1}. ${i.wic}${i.description ? ` — ${i.description}` : ''}\n   Availability: ${i.availability}`
+    );
+    const message = [`*Stock Request from ${customer!.name}${customer!.companyName ? ` (${customer!.companyName})` : ''}*`, '', ...lines].join('\n');
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  // ---- Priced Apple view ----
+  const pricedCategories = useMemo(
+    () => Array.from(new Set(pricedItems.map((i) => i.category).filter(Boolean))).sort(),
+    [pricedItems]
+  );
+
+  const pricedFiltered = useMemo(() => {
+    const q = pricedSearch.trim().toLowerCase();
+    return pricedItems.filter(
+      (i) =>
+        (pricedCategory === 'all' || i.category === pricedCategory) &&
+        (!q || i.partNumber.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q))
+    );
+  }, [pricedItems, pricedCategory, pricedSearch]);
+
+  const handleSendPricedWhatsApp = () => {
+    const selectedItems = pricedItems.filter((i) => pricedSelected.has(i.partNumber));
+    if (selectedItems.length === 0) return;
+    const lines = selectedItems.map(
+      (i, idx) => `${idx + 1}. ${i.partNumber}${i.description ? ` — ${i.description}` : ''}\n   Stock: ${i.stock} | Price: AED ${i.price.toFixed(2)}`
+    );
+    const message = [`*Stock Request from ${customer!.name}${customer!.companyName ? ` (${customer!.companyName})` : ''}*`, '', ...lines].join('\n');
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   if (checkingSession) {
-    return <div className="flex flex-1 items-center justify-center text-sm text-muted">Loading…</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm" style={{ color: 'var(--muted)' }}>
+        Loading…
+      </div>
+    );
   }
 
   if (!customer) {
-    return <PortalAuthForm onLoggedIn={setCustomer} />;
+    return (
+      <PortalAuthForm
+        onLoggedIn={(c) => {
+          setCustomer(c as CustomerInfo);
+          setActiveBrand(c.enabledBrands[0] ?? null);
+        }}
+      />
+    );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6">
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col-reverse items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className="pointer-events-auto flex max-w-sm items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-medium shadow-lg"
-          >
-            <ShoppingBag size={14} className="shrink-0 text-accent" />
-            {t.text}
-          </div>
-        ))}
+    <div className="flex w-full min-w-0 flex-1 flex-col" style={{ position: 'relative' }}>
+      {/* Collapsing large-title nav — ported 1:1 from the V3 demo's .ios-nav / .ios-nav-inline */}
+      <div className={`ios-nav ${navScrolled ? 'scrolled' : ''}`}>
+        <div className="ios-nav-inline">
+          Client Portal
+          <span className="logout-link" onClick={handleLogout} role="button">
+            <LogOut size={13} /> Log Out
+          </span>
+        </div>
       </div>
 
-      <header className="mb-6 flex items-center gap-3">
-        {logoBadge}
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-            Florence <span className="text-accent">Client Portal</span>
-          </h1>
-          <p className="truncate text-xs text-muted">
-            {customer.name} · {customer.email}
-          </p>
+      <div ref={largeTitleRef} className="ios-large-title">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h1>
+              Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
+            </h1>
+            <div className="sub">{customer.name} · {customer.email}</div>
+          </div>
+          <ThemeToggle />
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-surface"
-        >
-          <LogOut size={14} /> Log Out
-        </button>
-      </header>
-
-      <Card>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <SectionHeader title="Stock & Pricing" subtitle="Search or browse everything available to you" />
-          <button
-            onClick={() => loadItems()}
-            disabled={loadingItems}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted disabled:opacity-50"
-          >
-            <RefreshCw size={13} /> Refresh
-          </button>
+        <div className="sub" style={{ marginTop: 8 }}>
+          <span style={{ color: 'var(--accent)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={handleLogout} role="button">
+            <LogOut size={13} /> Log Out
+          </span>
         </div>
+      </div>
 
-        <div className="relative mb-4">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search part number, description, or category…"
-            className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-          />
-        </div>
+      <div className="ios-content">
+        {customer.enabledBrands.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 0', textAlign: 'center', color: 'var(--muted)' }}>
+            <PackageSearch size={24} />
+            No brands are enabled on your account yet. Ask Florence to enable at least one brand.
+          </div>
+        ) : (
+          <>
+            {/* Single-select brand slider — one brand's stock shown at a time */}
+            <div className="brand-toggle-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4 }}>
+              {customer.enabledBrands.map((brand) => (
+                <button
+                  key={brand}
+                  onClick={() => setActiveBrand(brand)}
+                  className={`brand-btn ${activeBrand === brand ? 'active' : ''}`}
+                  style={{ flexShrink: 0 }}
+                >
+                  <BrandLogo vendor={brand} size={15} />
+                  {brand}
+                </button>
+              ))}
+            </div>
 
-        {itemsError && <p className="mb-3 text-xs text-loss">{itemsError}</p>}
+            {showApplePriced ? (
+              <>
+                <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Stock &amp; Pricing</span>
+                  <button className="toolbar-btn" onClick={() => loadPriced()} disabled={loadingPriced}>
+                    <RefreshCw /> Refresh
+                  </button>
+                </div>
 
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <StatCard label="Items Available" value={loadingItems ? '…' : String(filtered.length)} />
-          {selected.size > 0 && (
-            <button
-              onClick={handleSendWhatsApp}
-              className="flex items-center gap-1.5 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-black"
-            >
-              <MessageCircle size={16} /> Send {selected.size} Selected via WhatsApp
-            </button>
-          )}
-        </div>
+                <div className="search-field">
+                  <Search />
+                  <input value={pricedSearch} onChange={(e) => setPricedSearch(e.target.value)} placeholder="Search part number, description, or category…" />
+                </div>
 
-        <div className="max-h-[560px] overflow-auto rounded-xl border border-border">
-          <table className="w-full min-w-[620px] text-sm">
-            <thead className="sticky top-0 bg-surface-muted">
-              <tr className="text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={allVisibleSelected}
-                    onChange={toggleSelectAllVisible}
-                    className="h-4 w-4 rounded border-border accent-[var(--accent)]"
-                  />
-                </th>
-                <th className="px-3 py-2">Part Number</th>
-                <th className="px-3 py-2">Description</th>
-                <th className="px-3 py-2">Category</th>
-                <th className="px-3 py-2">Stock</th>
-                <th className="px-3 py-2">Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loadingItems ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
-                    Loading…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-muted">
-                    <div className="flex flex-col items-center gap-2">
-                      <PackageSearch size={24} />
-                      {items.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
+                <div className="filter-bar">
+                  <select className="filter-select" value={pricedCategory} onChange={(e) => setPricedCategory(e.target.value)}>
+                    <option value="all">All Categories</option>
+                    {pricedCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="stat">
+                    <div className="k">Items Available</div>
+                    <div className="v">{loadingPriced ? '…' : pricedFiltered.length}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    {pricedSelected.size > 0 && (
+                      <button className="whatsapp-chip" onClick={handleSendPricedWhatsApp}>
+                        <MessageCircle /> Send {pricedSelected.size}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="table-card">
+                  <div className="table-scroll">
+                    <table className="apple-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 36 }}></th>
+                          <th>Part Number</th>
+                          <th>Description</th>
+                          <th>Category</th>
+                          <th className="num">Stock</th>
+                          <th className="num">Price</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loadingPriced ? (
+                          <tr>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                              Loading…
+                            </td>
+                          </tr>
+                        ) : pricedFiltered.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                              {pricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          pricedFiltered.map((item) => (
+                            <tr key={item.partNumber}>
+                              <td>
+                                <button
+                                  className={`select-dot ${pricedSelected.has(item.partNumber) ? 'checked' : ''}`}
+                                  onClick={() => togglePricedSelected(item.partNumber)}
+                                >
+                                  <Check />
+                                </button>
+                              </td>
+                              <td className="mono">{item.partNumber}</td>
+                              <td className="desc-cell">{item.description || '—'}</td>
+                              <td>{item.category}</td>
+                              <td className="num mono stock-cell">
+                                {item.stock > 0 ? item.stock : <span className="pill pill-red">Out of Stock</span>}
+                              </td>
+                              <td className="num mono price-cell">AED {item.price.toFixed(2)}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Stock &amp; Availability · no pricing shown here</span>
+                  <button className="toolbar-btn" onClick={() => loadCatalog()} disabled={loadingCatalog}>
+                    <RefreshCw /> Refresh
+                  </button>
+                </div>
+
+                <div className="search-field">
+                  <Search />
+                  <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search part number, description, or category…" />
+                </div>
+
+                <div className="filter-bar">
+                  <select className="filter-select" value={catalogCategory} onChange={(e) => setCatalogCategory(e.target.value)}>
+                    <option value="all">All Categories</option>
+                    {catalogCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <select className="filter-select" value={catalogAvail} onChange={(e) => setCatalogAvail(e.target.value)}>
+                    <option value="all">All Availability</option>
+                    <option value="Available">Available</option>
+                    <option value="On Demand">On Demand</option>
+                    <option value="Limited">Limited</option>
+                  </select>
+                </div>
+
+                <div className="stats" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                  <div className="stat">
+                    <div className="k">Items Available</div>
+                    <div className="v">{loadingCatalog ? '…' : catalogFiltered.length}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    {catalogSelected.size > 0 && (
+                      <button className="whatsapp-chip" onClick={handleSendCatalogWhatsApp}>
+                        <MessageCircle /> Send {catalogSelected.size}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {catalogGroups.length === 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '32px 0', textAlign: 'center', color: 'var(--muted)' }}>
+                    <PackageSearch size={24} />
+                    No matches for these filters.
+                  </div>
+                ) : (
+                  catalogGroups.map(([group, groupItems]) => (
+                    <div key={group}>
+                      <div className="section-header">{group}</div>
+                      <div className="ios-group">
+                        {groupItems.map((item) => (
+                          <div key={item.wic} className="ios-row" style={{ alignItems: 'flex-start' }}>
+                            <button
+                              className={`select-dot ${catalogSelected.has(item.wic) ? 'checked' : ''}`}
+                              onClick={() => toggleCatalogSelected(item.wic)}
+                            >
+                              <Check />
+                            </button>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="row-title mono" style={{ fontSize: 13 }}>
+                                {item.wic}
+                              </div>
+                              <div className="row-sub" style={{ whiteSpace: 'normal' }}>
+                                {item.description || '—'}
+                              </div>
+                            </div>
+                            <span className={`pill ${AVAIL_CLASS[item.availability] ?? ''}`} style={{ marginTop: 2 }}>
+                              {item.availability}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((item) => (
-                  <tr key={item.partNumber} className="border-t border-border/60">
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(item.partNumber)}
-                        onChange={() => toggleSelected(item.partNumber)}
-                        className="h-4 w-4 rounded border-border accent-[var(--accent)]"
-                      />
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono font-medium">{item.partNumber}</td>
-                    <td className="max-w-[240px] truncate px-3 py-2 text-muted">{item.description || '—'}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-muted">{item.category}</td>
-                    <td className="px-3 py-2 tabular-nums">
-                      {item.stock > 0 ? item.stock : <Badge tone="loss">Out of Stock</Badge>}
-                    </td>
-                    <td className="px-3 py-2 tabular-nums font-medium text-accent">AED {item.price.toFixed(2)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                  ))
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

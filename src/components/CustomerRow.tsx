@@ -1,32 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Tag } from 'lucide-react';
 import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
 import { updateCustomerApi, deleteCustomerApi } from '@/lib/customerApi';
-import { Field, TextInput, Badge } from './ui';
+import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 import { CategoryMarkupEditor } from './CategoryMarkupEditor';
+import { BrandAccessEditor } from './BrandAccessEditor';
+import { BrandLogo } from './BrandLogo';
 
 function formatMarkup(m: CategoryMarkup): string {
   return m.markupType === 'percent' ? `${(m.markupValue * 100).toFixed(1)}%` : `AED ${m.markupValue.toFixed(2)} flat`;
 }
 
+function initials(name: string, email: string): string {
+  const source = name.trim() || email;
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
+
 export function CustomerRow({
   customer,
   categories,
+  vendors,
   onUpdated,
   onDeleted,
 }: {
   customer: PublicCustomer;
   categories: string[];
+  vendors: string[];
   onUpdated: (c: PublicCustomer) => void;
   onDeleted: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>(customer.categoryMarkups);
+  const [enabledBrands, setEnabledBrands] = useState<string[]>(customer.enabledBrands);
+  const [appleShowPrices, setAppleShowPrices] = useState(customer.appleShowPrices);
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hasApple = enabledBrands.includes(MANUAL_STOCK_VENDOR);
 
   const handleSave = async () => {
     setSaving(true);
@@ -34,6 +49,8 @@ export function CustomerRow({
     try {
       const updated = await updateCustomerApi(customer.id, {
         categoryMarkups,
+        enabledBrands,
+        appleShowPrices,
         ...(newPassword ? { password: newPassword } : {}),
       });
       onUpdated(updated);
@@ -52,70 +69,101 @@ export function CustomerRow({
     onDeleted(customer.id);
   };
 
-  if (!editing) {
-    return (
-      <div className="flex items-center justify-between gap-3 border-t border-border/60 py-3 first:border-0">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-sm font-medium">{customer.name || customer.email}</span>
-            {customer.categoryMarkups.length === 0 ? (
-              <Badge tone="warn">No categories enabled</Badge>
-            ) : (
-              customer.categoryMarkups.map((m) => (
-                <Badge key={m.category} tone="accent">
-                  {m.category}: {formatMarkup(m)}
-                </Badge>
-              ))
-            )}
-          </div>
-          <div className="mt-0.5 text-xs text-muted">
+  return (
+    <div className="customer-card">
+      <div className="customer-card-head">
+        <div className="customer-avatar">{initials(customer.name, customer.email)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="customer-name">{customer.name || customer.email}</div>
+          <div className="customer-sub">
             {customer.email}
             {customer.companyName && ` · ${customer.companyName}`}
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <button onClick={() => setEditing(true)} className="rounded-lg border border-border p-1.5 hover:bg-surface-muted">
-            <Pencil size={14} />
-          </button>
-          <button onClick={handleDelete} className="rounded-lg border border-border p-1.5 text-loss hover:bg-loss-bg">
-            <Trash2 size={14} />
-          </button>
-        </div>
+        {!editing && (
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <button className="toolbar-btn" onClick={() => setEditing(true)}>
+              <Pencil />
+            </button>
+            <button className="toolbar-btn" onClick={handleDelete} style={{ color: 'var(--loss)' }}>
+              <Trash2 />
+            </button>
+          </div>
+        )}
       </div>
-    );
-  }
 
-  return (
-    <div className="border-t border-border/60 py-3 first:border-0">
-      <div className="mb-2 text-sm font-medium">{customer.email}</div>
-      <div className="mb-3">
-        <Field label="New Password (optional)">
-          <TextInput
-            type="password"
-            placeholder="Leave blank to keep current"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </Field>
-      </div>
-      <span className="mb-1.5 block text-xs font-medium text-muted">Categories & markup</span>
-      <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
-      {error && <p className="mt-2 text-xs text-loss">{error}</p>}
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
-        >
-          <Check size={14} /> Save
-        </button>
-        <button
-          onClick={() => setEditing(false)}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-surface-muted"
-        >
-          <X size={14} /> Cancel
-        </button>
-      </div>
+      {!editing ? (
+        <>
+          <div className="perm-label">Categories &amp; markup</div>
+          <div className="perm-row" style={{ marginBottom: 12 }}>
+            {customer.categoryMarkups.length === 0 ? (
+              <span className="pill pill-orange">No categories enabled</span>
+            ) : (
+              customer.categoryMarkups.map((m) => (
+                <span key={m.category} className="pill" style={{ background: 'var(--fill)' }}>
+                  {m.category}: {formatMarkup(m)}
+                </span>
+              ))
+            )}
+          </div>
+          <div className="perm-label">Vendor catalog brands</div>
+          <div className="perm-row">
+            {customer.enabledBrands.length === 0 ? (
+              <span className="pill pill-orange">No brands enabled</span>
+            ) : (
+              customer.enabledBrands.map((b) => (
+                <span key={b} className="pill pill-green" style={{ gap: 4 }}>
+                  <BrandLogo vendor={b} size={12} /> {b}
+                </span>
+              ))
+            )}
+            {customer.enabledBrands.includes(MANUAL_STOCK_VENDOR) && (
+              <span className={`pill ${customer.appleShowPrices ? 'pill-green' : 'pill-orange'}`} style={{ gap: 4 }}>
+                <Tag size={11} /> Apple prices: {customer.appleShowPrices ? 'On' : 'Off'}
+              </span>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="field-row" style={{ background: 'var(--background)', borderRadius: 'var(--r-sm)', marginBottom: 12 }}>
+            <label>New Password (optional)</label>
+            <input
+              type="password"
+              placeholder="Leave blank to keep current"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <div className="perm-label">Categories &amp; markup</div>
+          <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
+          <div className="perm-label" style={{ marginTop: 12 }}>
+            Vendor catalog brands — Apple shows real pricing (with markup); every other brand is availability only
+          </div>
+          <div className="perm-row">
+            <BrandAccessEditor vendors={vendors} value={enabledBrands} onChange={setEnabledBrands} />
+          </div>
+          {hasApple && (
+            <button
+              type="button"
+              onClick={() => setAppleShowPrices((v) => !v)}
+              className={`perm-chip ${appleShowPrices ? 'on' : 'off'}`}
+              style={{ marginTop: 8 }}
+            >
+              <Tag size={13} /> Apple prices: {appleShowPrices ? 'On (customer sees price)' : 'Off (availability only)'}
+            </button>
+          )}
+          {error && <p style={{ marginTop: 8, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            <button onClick={handleSave} disabled={saving} className="toolbar-btn primary">
+              <Check /> Save
+            </button>
+            <button onClick={() => setEditing(false)} className="toolbar-btn">
+              <X /> Cancel
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

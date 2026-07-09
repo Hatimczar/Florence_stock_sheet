@@ -7,13 +7,14 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
-  const body = (await req.json()) as { categoryMarkups: CategoryMarkup[] };
+  const body = (await req.json()) as { categoryMarkups: CategoryMarkup[]; enabledBrands?: string[] };
+  const enabledBrands = body.enabledBrands ?? [];
 
-  if (!Array.isArray(body.categoryMarkups) || body.categoryMarkups.length === 0) {
-    return NextResponse.json({ error: 'Enable at least one category to approve this customer' }, { status: 400 });
+  if ((!Array.isArray(body.categoryMarkups) || body.categoryMarkups.length === 0) && enabledBrands.length === 0) {
+    return NextResponse.json({ error: 'Enable at least one category or brand to approve this customer' }, { status: 400 });
   }
 
-  const customer = await approveCustomer(id, body.categoryMarkups);
+  const customer = await approveCustomer(id, body.categoryMarkups ?? [], enabledBrands);
   if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
   return NextResponse.json({ customer });
 }

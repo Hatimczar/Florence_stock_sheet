@@ -35,7 +35,14 @@ export async function POST(req: NextRequest) {
   await clearFailedLogins(email);
   const { token, maxAge } = await createSession(customer.id);
 
-  const res = NextResponse.json({ ok: true, name: customer.name, email: customer.email, companyName: customer.companyName });
+  const res = NextResponse.json({
+    ok: true,
+    name: customer.name,
+    email: customer.email,
+    companyName: customer.companyName,
+    enabledBrands: customer.enabledBrands,
+    appleShowPrices: customer.appleShowPrices,
+  });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,

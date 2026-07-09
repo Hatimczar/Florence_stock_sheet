@@ -20,6 +20,8 @@ export async function createCustomerApi(params: {
   companyName?: string;
   password: string;
   categoryMarkups: CategoryMarkup[];
+  enabledBrands?: string[];
+  appleShowPrices?: boolean;
 }): Promise<PublicCustomer> {
   const res = await fetch('/api/admin/customers', {
     method: 'POST',
@@ -33,7 +35,13 @@ export async function createCustomerApi(params: {
 
 export async function updateCustomerApi(
   id: string,
-  patch: { name?: string; password?: string; categoryMarkups?: CategoryMarkup[] }
+  patch: {
+    name?: string;
+    password?: string;
+    categoryMarkups?: CategoryMarkup[];
+    enabledBrands?: string[];
+    appleShowPrices?: boolean;
+  }
 ): Promise<PublicCustomer> {
   const res = await fetch(`/api/admin/customers/${id}`, {
     method: 'PATCH',
@@ -50,13 +58,24 @@ export async function deleteCustomerApi(id: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to delete customer');
 }
 
-export async function approveCustomerApi(id: string, categoryMarkups: CategoryMarkup[]): Promise<PublicCustomer> {
+export async function approveCustomerApi(
+  id: string,
+  categoryMarkups: CategoryMarkup[],
+  enabledBrands: string[] = []
+): Promise<PublicCustomer> {
   const res = await fetch(`/api/admin/customers/${id}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ categoryMarkups }),
+    body: JSON.stringify({ categoryMarkups, enabledBrands }),
   });
   const data = (await res.json()) as { customer?: PublicCustomer; error?: string };
   if (!res.ok || !data.customer) throw new Error(data.error || 'Failed to approve customer');
   return data.customer;
+}
+
+export async function fetchCatalogVendors(): Promise<string[]> {
+  const res = await fetch('/api/admin/catalog/vendors', { cache: 'no-store' });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { vendors: string[] };
+  return data.vendors;
 }

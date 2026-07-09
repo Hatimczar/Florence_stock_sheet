@@ -13,6 +13,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     name?: string;
     password?: string;
     categoryMarkups?: CategoryMarkup[];
+    enabledBrands?: string[];
+    appleShowPrices?: boolean;
   };
 
   const customer = await updateCustomer(id, body);

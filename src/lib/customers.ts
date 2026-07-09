@@ -19,6 +19,11 @@ export interface Customer {
   status: CustomerStatus;
   // Only categories present here are visible to the customer; each has its own markup.
   categoryMarkups: CategoryMarkup[];
+  // Vendor/brand names (from the IT4Profit catalog, plus "Apple" for the manual sheet) this customer is allowed to browse.
+  enabledBrands: string[];
+  // Apple is the one brand that can show real pricing (with this customer's category markup applied). Admin can turn it
+  // off per customer to make Apple behave like every other brand — availability only, no price.
+  appleShowPrices: boolean;
   createdAt: string;
 }
 
@@ -41,6 +46,8 @@ function normalizeCustomer(raw: Partial<Customer> & Pick<Customer, 'id' | 'email
     passwordHash: raw.passwordHash,
     status: raw.status ?? 'approved',
     categoryMarkups: raw.categoryMarkups ?? [],
+    enabledBrands: raw.enabledBrands ?? [],
+    appleShowPrices: raw.appleShowPrices ?? true,
     createdAt: raw.createdAt ?? new Date().toISOString(),
   };
 }
@@ -81,6 +88,8 @@ export async function createCustomer(params: {
   companyName?: string;
   password: string;
   categoryMarkups: CategoryMarkup[];
+  enabledBrands?: string[];
+  appleShowPrices?: boolean;
 }): Promise<PublicCustomer> {
   const customers = await listCustomers();
   const normalizedEmail = params.email.trim().toLowerCase();
@@ -95,6 +104,8 @@ export async function createCustomer(params: {
     passwordHash: await hashPassword(params.password),
     status: 'approved',
     categoryMarkups: params.categoryMarkups,
+    enabledBrands: params.enabledBrands ?? [],
+    appleShowPrices: params.appleShowPrices ?? true,
     createdAt: new Date().toISOString(),
   };
   customers.push(customer);
@@ -123,6 +134,8 @@ export async function createSignup(params: {
     passwordHash: await hashPassword(params.password),
     status: 'pending',
     categoryMarkups: [],
+    enabledBrands: [],
+    appleShowPrices: true,
     createdAt: new Date().toISOString(),
   };
   customers.push(customer);
@@ -131,12 +144,16 @@ export async function createSignup(params: {
   return publicCustomer;
 }
 
-/** Admin approves a pending signup by granting category access. */
-export async function approveCustomer(id: string, categoryMarkups: CategoryMarkup[]): Promise<PublicCustomer | null> {
+/** Admin approves a pending signup by granting category and/or brand access. */
+export async function approveCustomer(
+  id: string,
+  categoryMarkups: CategoryMarkup[],
+  enabledBrands: string[] = []
+): Promise<PublicCustomer | null> {
   const customers = await listCustomers();
   const idx = customers.findIndex((c) => c.id === id);
   if (idx === -1) return null;
-  const updated: Customer = { ...customers[idx], status: 'approved', categoryMarkups };
+  const updated: Customer = { ...customers[idx], status: 'approved', categoryMarkups, enabledBrands };
   customers[idx] = updated;
   await saveCustomers(customers);
   const { passwordHash: _passwordHash, ...publicCustomer } = updated;
@@ -145,7 +162,9 @@ export async function approveCustomer(id: string, categoryMarkups: CategoryMarku
 
 export async function updateCustomer(
   id: string,
-  patch: Partial<Pick<Customer, 'name' | 'companyName' | 'categoryMarkups'>> & { password?: string }
+  patch: Partial<Pick<Customer, 'name' | 'companyName' | 'categoryMarkups' | 'enabledBrands' | 'appleShowPrices'>> & {
+    password?: string;
+  }
 ): Promise<PublicCustomer | null> {
   const customers = await listCustomers();
   const idx = customers.findIndex((c) => c.id === id);
@@ -157,6 +176,8 @@ export async function updateCustomer(
     name: patch.name ?? existing.name,
     companyName: patch.companyName ?? existing.companyName,
     categoryMarkups: patch.categoryMarkups ?? existing.categoryMarkups,
+    enabledBrands: patch.enabledBrands ?? existing.enabledBrands,
+    appleShowPrices: patch.appleShowPrices ?? existing.appleShowPrices,
     passwordHash: patch.password ? await hashPassword(patch.password) : existing.passwordHash,
   };
   customers[idx] = updated;

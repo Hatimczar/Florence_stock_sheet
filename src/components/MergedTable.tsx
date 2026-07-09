@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { Download, Search, AlertTriangle, ListRestart, Pencil, Check, X } from 'lucide-react';
 import { MergeResult, MergedRow } from '@/lib/merge';
 import { downloadMergedCSV } from '@/lib/export';
-import { Card, SectionHeader, Badge, StatCard } from './ui';
 
 type SortKey = 'fileOrder' | 'partNumber' | 'stock' | 'price';
 
@@ -51,9 +50,9 @@ export function MergedTable({
   };
 
   const statusBadge = (row: MergedRow) => {
-    if (row.status === 'matched') return <Badge tone="profit">Matched</Badge>;
-    if (row.status === 'missing-stock') return <Badge tone="warn">No Stock Data</Badge>;
-    return <Badge tone="warn">No Price Data</Badge>;
+    if (row.status === 'matched') return <span className="pill pill-green">Matched</span>;
+    if (row.status === 'missing-stock') return <span className="pill pill-orange">No Stock Data</span>;
+    return <span className="pill pill-orange">No Price Data</span>;
   };
 
   const startEdit = (row: MergedRow) => {
@@ -86,135 +85,151 @@ export function MergedTable({
   };
 
   return (
-    <Card>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <SectionHeader step="③" title="Merged View" subtitle={`${result.rows.length} unique part numbers`} />
+    <div>
+      <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <span>③ Merged View · {result.rows.length} Unique Part Numbers</span>
         <button
           onClick={() => downloadMergedCSV(`florence-stock-sheet-${new Date().toISOString().slice(0, 10)}.csv`, result.rows)}
           disabled={result.rows.length === 0}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-40"
+          className="toolbar-btn primary"
+          style={{ textTransform: 'none', letterSpacing: 0 }}
         >
-          <Download size={14} /> Export CSV
+          <Download size={13} /> Export CSV
         </button>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total Parts" value={String(result.rows.length)} />
-        <StatCard label="Matched" value={String(result.totalMatched)} tone="profit" />
-        <StatCard label="Missing Stock" value={String(result.totalMissingStock)} tone="warn" />
-        <StatCard label="Missing Price" value={String(result.totalMissingPrice)} tone="warn" />
+      <div className="stats">
+        <div className="stat">
+          <div className="k">Total Parts</div>
+          <div className="v">{result.rows.length}</div>
+        </div>
+        <div className="stat tone-green">
+          <div className="k">Matched</div>
+          <div className="v">{result.totalMatched}</div>
+        </div>
+        <div className="stat tone-orange">
+          <div className="k">Missing Stock</div>
+          <div className="v">{result.totalMissingStock}</div>
+        </div>
+        <div className="stat tone-orange">
+          <div className="k">Missing Price</div>
+          <div className="v">{result.totalMissingPrice}</div>
+        </div>
       </div>
 
       {result.duplicatePartNumbers.length > 0 && (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-warn/30 bg-warn-bg p-3 text-xs text-warn">
-          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+        <div
+          className="pill pill-orange"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px', marginBottom: 16, borderRadius: 'var(--r-md)', whiteSpace: 'normal' }}
+        >
+          <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0 }} />
           <span>
-            {result.duplicatePartNumbers.length} part number{result.duplicatePartNumbers.length === 1 ? '' : 's'} appeared more than once in a list
-            (stock quantities were summed; price used the last row found): {result.duplicatePartNumbers.slice(0, 8).join(', ')}
+            {result.duplicatePartNumbers.length} part number{result.duplicatePartNumbers.length === 1 ? '' : 's'} appeared more than
+            once in a list (stock quantities were summed; price used the last row found):{' '}
+            {result.duplicatePartNumbers.slice(0, 8).join(', ')}
             {result.duplicatePartNumbers.length > 8 ? ', …' : ''}
           </span>
         </div>
       )}
 
-      <div className="mb-3 flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search part number or description…"
-            className="w-full rounded-lg border border-border bg-surface-muted py-2 pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-          />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="search-field" style={{ flex: 1 }}>
+          <Search />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search part number or description…" />
         </div>
         {sortKey !== 'fileOrder' && (
-          <button
-            onClick={() => setSortKey('fileOrder')}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted hover:bg-surface-muted"
-          >
-            <ListRestart size={14} /> Stock File Order
+          <button className="toolbar-btn" onClick={() => setSortKey('fileOrder')} style={{ marginBottom: 16 }}>
+            <ListRestart size={13} /> Stock File Order
           </button>
         )}
       </div>
 
-      <div className="max-h-[520px] overflow-auto rounded-xl border border-border">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead className="sticky top-0 bg-surface-muted">
-            <tr className="text-left text-xs uppercase tracking-wide text-muted">
-              <th className="cursor-pointer select-none px-3 py-2" onClick={() => toggleSort('partNumber')}>
-                Part Number {sortKey === 'partNumber' && (sortDir === 'asc' ? '▲' : '▼')}
-              </th>
-              <th className="px-3 py-2">Description</th>
-              <th className="px-3 py-2">Category</th>
-              <th className="cursor-pointer select-none px-3 py-2" onClick={() => toggleSort('stock')}>
-                Stock {sortKey === 'stock' && (sortDir === 'asc' ? '▲' : '▼')}
-              </th>
-              <th className="cursor-pointer select-none px-3 py-2" onClick={() => toggleSort('price')}>
-                Price {sortKey === 'price' && (sortDir === 'asc' ? '▲' : '▼')}
-              </th>
-              <th className="px-3 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+      <div className="table-card">
+        <div className="table-scroll">
+          <table className="apple-table">
+            <thead>
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted">
-                  {result.rows.length === 0 ? 'Upload both lists to see the merged view.' : 'No matches for this search.'}
-                </td>
+                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('partNumber')}>
+                  Part Number {sortKey === 'partNumber' && (sortDir === 'asc' ? '▲' : '▼')}
+                </th>
+                <th>Description</th>
+                <th>Category</th>
+                <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('stock')}>
+                  Stock {sortKey === 'stock' && (sortDir === 'asc' ? '▲' : '▼')}
+                </th>
+                <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('price')}>
+                  Price {sortKey === 'price' && (sortDir === 'asc' ? '▲' : '▼')}
+                </th>
+                <th>Status</th>
               </tr>
-            ) : (
-              filtered.map((row) => (
-                <tr key={row.partNumber} className="border-t border-border/60">
-                  <td className="whitespace-nowrap px-3 py-2 font-medium">{row.partNumber}</td>
-                  <td className="max-w-[240px] truncate px-3 py-2 text-muted">{row.description || '—'}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-muted">{row.category}</td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {editingPartNumber === row.partNumber ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          min={0}
-                          autoFocus
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveEdit(row.partNumber);
-                            if (e.key === 'Escape') cancelEdit();
-                          }}
-                          disabled={saving}
-                          className="w-16 rounded border border-accent bg-surface px-1.5 py-0.5 text-sm outline-none disabled:opacity-50"
-                        />
-                        <button
-                          onClick={() => saveEdit(row.partNumber)}
-                          disabled={saving}
-                          className="text-profit hover:opacity-75 disabled:opacity-50"
-                          title="Save"
-                        >
-                          <Check size={14} />
-                        </button>
-                        <button onClick={cancelEdit} disabled={saving} className="text-muted hover:opacity-75 disabled:opacity-50" title="Cancel">
-                          <X size={14} />
-                        </button>
-                        {editError && <span className="whitespace-nowrap text-xs text-loss">{editError}</span>}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <span>{row.stock === null ? '—' : row.stock}</span>
-                        {onUpdateStock && (
-                          <button onClick={() => startEdit(row)} className="text-muted hover:text-accent" title="Edit stock">
-                            <Pencil size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                    {result.rows.length === 0 ? 'Upload both lists to see the merged view.' : 'No matches for this search.'}
                   </td>
-                  <td className="px-3 py-2 tabular-nums">{row.price === null ? '—' : row.price.toFixed(2)}</td>
-                  <td className="px-3 py-2">{statusBadge(row)}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filtered.map((row) => (
+                  <tr key={row.partNumber}>
+                    <td className="mono">{row.partNumber}</td>
+                    <td className="desc-cell">{row.description || '—'}</td>
+                    <td>{row.category}</td>
+                    <td className="num mono stock-cell">
+                      {editingPartNumber === row.partNumber ? (
+                        <span className="stock-edit">
+                          <input
+                            type="number"
+                            min={0}
+                            autoFocus
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(row.partNumber);
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            disabled={saving}
+                            style={{
+                              width: 56,
+                              borderRadius: 6,
+                              border: '1px solid var(--accent)',
+                              background: 'var(--background)',
+                              color: 'var(--foreground)',
+                              padding: '2px 6px',
+                              font: 'inherit',
+                            }}
+                          />
+                          <button onClick={() => saveEdit(row.partNumber)} disabled={saving} title="Save">
+                            <Check />
+                          </button>
+                          <button onClick={cancelEdit} disabled={saving} title="Cancel">
+                            <X />
+                          </button>
+                          {editError && (
+                            <span style={{ whiteSpace: 'nowrap', fontSize: 11, color: 'var(--loss)' }}>{editError}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="stock-edit">
+                          {row.stock === null ? '—' : row.stock}
+                          {onUpdateStock && (
+                            <button onClick={() => startEdit(row)} title="Edit stock">
+                              <Pencil />
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </td>
+                    <td className="num mono price-cell">{row.price === null ? '—' : row.price.toFixed(2)}</td>
+                    <td>{statusBadge(row)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
