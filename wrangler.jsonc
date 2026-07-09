@@ -1,0 +1,32 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	// Deliberately a different worker name from production ("florence-stock-sheet") so a
+	// `cf:deploy` run from this repo can never overwrite the live production worker.
+	"name": "florence-stock-sheet-v3",
+	"workers_dev": true,
+	"compatibility_date": "2024-09-23",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "florence-stock-sheet-v3"
+		}
+	],
+	"kv_namespaces": [
+		{
+			// Placeholder — do NOT point this at production's namespace
+			// (40e606db6541491cadc1a8d7a4c99137). Create a fresh KV namespace for this
+			// test copy with `wrangler kv namespace create STOCK_SHEET_KV` before deploying.
+			"binding": "STOCK_SHEET_KV",
+			"id": "REPLACE_WITH_A_NEW_TEST_KV_NAMESPACE_ID"
+		}
+	]
+	// No custom_domain route on purpose — this repo must never claim
+	// stocks.florencetrading.me. Deploying (`npm run cf:deploy`) will only ever
+	// publish to a workers.dev subdomain for testing.
+}
