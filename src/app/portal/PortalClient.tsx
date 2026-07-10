@@ -5,6 +5,7 @@ import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check } from '
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { FlorenceLogo } from '@/components/FlorenceLogo';
 import { fetchCustomerCatalog, CustomerCatalogItem } from '@/lib/catalogApi';
 
 const MANUAL_STOCK_VENDOR = 'Apple';
@@ -244,7 +245,8 @@ export default function PortalClient() {
       <div ref={largeTitleRef} className="ios-large-title">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <FlorenceLogo size={26} />
               Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
             </h1>
             <div className="sub">{customer.name} · {customer.email}</div>

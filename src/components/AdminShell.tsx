@@ -2,10 +2,10 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Package, PackageSearch, Users, LogOut } from 'lucide-react';
 import { fetchCustomers } from '@/lib/customerApi';
 import { ThemeToggle } from './ThemeToggle';
+import { FlorenceLogo } from './FlorenceLogo';
 
 type AdminNavKey = 'stock' | 'catalog' | 'customers';
 
@@ -46,7 +46,7 @@ export function AdminShell({
         <div className="mac-sidebar">
           <div className="mac-brand">
             <div className="mark">
-              <Image src="/florence-icon.png" alt="" width={14} height={14} />
+              <FlorenceLogo size={20} />
             </div>
             <span className="name">Florence</span>
           </div>

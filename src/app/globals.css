@@ -235,8 +235,6 @@ body {
 .mac-brand .mark {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
-  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
