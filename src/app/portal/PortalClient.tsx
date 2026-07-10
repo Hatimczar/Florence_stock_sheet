@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
@@ -55,21 +55,6 @@ export default function PortalClient() {
   const [pricedSearch, setPricedSearch] = useState('');
   const [pricedCategory, setPricedCategory] = useState('all');
   const [pricedSelected, setPricedSelected] = useState<Set<string>>(new Set());
-
-  const [navScrolled, setNavScrolled] = useState(false);
-  const largeTitleRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const NAV_HEIGHT = 52;
-    const onScroll = () => {
-      const el = largeTitleRef.current;
-      if (!el) return;
-      setNavScrolled(el.getBoundingClientRect().bottom <= NAV_HEIGHT);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [customer]);
 
   useEffect(() => {
     (async () => {
@@ -232,59 +217,59 @@ export default function PortalClient() {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-1 flex-col" style={{ position: 'relative' }}>
-      {/* Collapsing large-title nav — ported 1:1 from the V3 demo's .ios-nav / .ios-nav-inline */}
-      <div className={`ios-nav ${navScrolled ? 'scrolled' : ''}`}>
-        <div className="ios-nav-inline">
-          Client Portal
-          <span className="logout-link" onClick={handleLogout} role="button">
-            <LogOut size={13} /> Log Out
-          </span>
-        </div>
-      </div>
-
-      <div ref={largeTitleRef} className="ios-large-title">
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <FlorenceLogo size={26} />
-              Florence <span style={{ color: 'var(--accent)' }}>Client Portal</span>
-            </h1>
-            <div className="sub">{customer.name} · {customer.email}</div>
-          </div>
-          <ThemeToggle />
-        </div>
-        <div className="sub" style={{ marginTop: 8 }}>
-          <span style={{ color: 'var(--accent)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={handleLogout} role="button">
-            <LogOut size={13} /> Log Out
-          </span>
-        </div>
-      </div>
-
-      <div className="ios-content">
-        {customer.enabledBrands.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 0', textAlign: 'center', color: 'var(--muted)' }}>
-            <PackageSearch size={24} />
-            No brands are enabled on your account yet. Ask Florence to enable at least one brand.
-          </div>
-        ) : (
-          <>
-            {/* Single-select brand slider — one brand's stock shown at a time */}
-            <div className="brand-toggle-row" style={{ flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4 }}>
-              {customer.enabledBrands.map((brand) => (
-                <button
-                  key={brand}
-                  onClick={() => setActiveBrand(brand)}
-                  className={`brand-btn ${activeBrand === brand ? 'active' : ''}`}
-                  style={{ flexShrink: 0 }}
-                >
-                  <BrandLogo vendor={brand} size={15} />
-                  {brand}
-                </button>
-              ))}
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mac-window portal-window">
+        <div className="mac-sidebar">
+          <div className="mac-brand">
+            <div className="mark">
+              <FlorenceLogo size={20} />
             </div>
+            <span className="name">Florence</span>
+          </div>
 
-            {showApplePriced ? (
+          <div className="mac-nav-section">Brands</div>
+          {customer.enabledBrands.map((brand) => (
+            <button
+              key={brand}
+              onClick={() => setActiveBrand(brand)}
+              className={`mac-nav-item ${activeBrand === brand ? 'active' : ''}`}
+            >
+              <BrandLogo vendor={brand} size={15} />
+              {brand}
+              <span className="sp" />
+            </button>
+          ))}
+
+          <div className="portal-account" style={{ marginTop: 'auto', paddingTop: 14 }}>
+            <div className="mac-nav-section" style={{ padding: '0 10px 4px' }}>
+              Signed in as
+            </div>
+            <div style={{ padding: '0 10px', fontSize: 12, color: 'var(--muted)', wordBreak: 'break-word' }}>
+              {customer.name}
+              <br />
+              {customer.email}
+            </div>
+          </div>
+        </div>
+
+        <div className="mac-main">
+          <div className="mac-toolbar">
+            <h2>{activeBrand ?? 'Client Portal'}</h2>
+            <div className="toolbar-actions">
+              <ThemeToggle />
+              <button className="toolbar-btn" onClick={handleLogout}>
+                <LogOut /> Log Out
+              </button>
+            </div>
+          </div>
+
+          <div className="mac-scroll">
+            {customer.enabledBrands.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 0', textAlign: 'center', color: 'var(--muted)' }}>
+                <PackageSearch size={24} />
+                No brands are enabled on your account yet. Ask Florence to enable at least one brand.
+              </div>
+            ) : showApplePriced ? (
               <>
                 <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>Stock &amp; Pricing</span>
@@ -458,8 +443,8 @@ export default function PortalClient() {
                 )}
               </>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
