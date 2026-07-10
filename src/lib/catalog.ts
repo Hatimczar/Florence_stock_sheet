@@ -79,12 +79,19 @@ export function parseIt4ProfitXml(xml: string): CatalogItem[] {
     .filter((item) => item.wic);
 }
 
+// Cloudflare Workers kill a request that runs too long (error 1102). ProductList.xml is 100MB+, and
+// most of the 5000+ WICs we look up won't have a gallery match, so scanning to completion routinely
+// took ~3 minutes locally — comfortably past what a single Worker invocation is allowed to take. This
+// caps the scan to a safe wall-clock budget: whatever's found in that window is used, the rest of the
+// sync still succeeds with PriceAvail's own image for everything not found in time.
+const PRODUCT_LIST_SCAN_BUDGET_MS = 8_000;
+
 /**
  * The ProductList.xml feed is a full catalog dump (100MB+) — far too big to load into memory
  * at once in a Worker. It's keyed by the same code as PriceAvail's WIC, and carries a richer
  * <Images> gallery that's often populated even when PriceAvail's own SMALL_IMAGE dead-ends into
  * IT4Profit's "no photo" placeholder. Streamed and scanned incrementally, one <Product> block at
- * a time, only keeping images for the WICs we actually need.
+ * a time, only keeping images for the WICs we actually need, within a bounded time budget.
  */
 async function fetchProductListImages(neededCodes: Set<string>, username: string, password: string): Promise<Map<string, string>> {
   const result = new Map<string, string>();
@@ -97,8 +104,9 @@ async function fetchProductListImages(neededCodes: Set<string>, username: string
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  const deadline = Date.now() + PRODUCT_LIST_SCAN_BUDGET_MS;
   try {
-    while (true) {
+    while (Date.now() < deadline) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
