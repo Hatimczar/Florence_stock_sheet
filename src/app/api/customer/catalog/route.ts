@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (enabled.has(MANUAL_STOCK_VENDOR) && !customer.appleShowPrices) {
     const manualItems = await getManualStockCatalogItems();
     for (const item of manualItems) {
-      items.push({ wic: item.wic, description: item.description, vendor: MANUAL_STOCK_VENDOR, group: item.group, availability: item.availability });
+      items.push({ wic: item.wic, description: item.description, vendor: MANUAL_STOCK_VENDOR, group: item.group, availability: item.availability, image: '' });
     }
   }
 
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         vendor: item.vendor,
         group: item.group,
         availability: CUSTOMER_AVAIL_LABEL[item.avail],
+        image: item.image,
       });
     }
   }

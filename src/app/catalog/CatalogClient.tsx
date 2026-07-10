@@ -141,6 +141,7 @@ function CatalogContent() {
               <table className="apple-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 44 }}></th>
                     <th>Part Number</th>
                     <th>Description</th>
                     <th>Brand</th>
@@ -153,13 +154,21 @@ function CatalogContent() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
                         No parts match these filters.
                       </td>
                     </tr>
                   ) : (
                     filtered.map((item) => (
                       <tr key={item.wic}>
+                        <td>
+                          {item.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.image} alt="" width={32} height={32} style={{ borderRadius: 6, objectFit: 'contain', background: 'var(--fill-secondary)' }} />
+                          ) : (
+                            <div style={{ width: 32, height: 32, borderRadius: 6, background: 'var(--fill-secondary)' }} />
+                          )}
+                        </td>
                         <td className="mono">{item.wic}</td>
                         <td className="desc-cell">{item.description || '—'}</td>
                         <td>{item.vendor}</td>

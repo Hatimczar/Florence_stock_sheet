@@ -9,6 +9,7 @@ export interface CatalogItem {
   avail: string; // lowercased raw feed value: 'yes' | 'on demand' | 'limited' | 'no' | ''
   retailPrice: number | null;
   myPrice: number | null;
+  image: string;
 }
 
 export interface StoredCatalog {
@@ -73,6 +74,7 @@ export function parseIt4ProfitXml(xml: string): CatalogItem[] {
       avail: extractTag(block, 'AVAIL').toLowerCase(),
       retailPrice: parseNumber(extractTag(block, 'RETAIL_PRICE')),
       myPrice: parseNumber(extractTag(block, 'MY_PRICE')),
+      image: extractTag(block, 'SMALL_IMAGE'),
     }))
     .filter((item) => item.wic);
 }

@@ -437,6 +437,18 @@ export default function PortalClient() {
                             >
                               <Check />
                             </button>
+                            {item.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.image}
+                                alt=""
+                                width={36}
+                                height={36}
+                                style={{ borderRadius: 8, objectFit: 'contain', background: 'var(--fill-secondary)', flexShrink: 0 }}
+                              />
+                            ) : (
+                              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--fill-secondary)', flexShrink: 0 }} />
+                            )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="row-title mono" style={{ fontSize: 13 }}>
                                 {item.wic}

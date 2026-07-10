@@ -6,6 +6,7 @@ export interface CustomerCatalogItem {
   vendor: string;
   group: string;
   availability: string;
+  image: string;
 }
 
 export async function fetchAdminCatalog(): Promise<{ items: CatalogItem[]; syncedAt: string | null }> {
