@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check, Menu } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
@@ -27,8 +27,14 @@ interface PricedItem {
   price: number;
 }
 
+interface StockToast {
+  id: string;
+  text: string;
+}
+
 const WHATSAPP_NUMBER = '971525348090';
 const STOCK_POLL_INTERVAL_MS = 8_000;
+const TOAST_LIFETIME_MS = 6_000;
 
 const AVAIL_CLASS: Record<string, string> = {
   Available: 'avail-yes',
@@ -61,6 +67,17 @@ export default function PortalClient() {
   const [pricedCategory, setPricedCategory] = useState('all');
   const [pricedSelected, setPricedSelected] = useState<Set<string>>(new Set());
 
+  // "Sold"/availability-change toasts — diffed against the previous poll's snapshot.
+  const [toasts, setToasts] = useState<StockToast[]>([]);
+  const prevStockRef = useRef<Map<string, number>>(new Map());
+  const prevAvailRef = useRef<Map<string, string>>(new Map());
+
+  const pushToast = (text: string) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev, { id, text }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_LIFETIME_MS);
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -83,7 +100,15 @@ export default function PortalClient() {
         return;
       }
       const data = (res.ok ? await res.json() : { items: [] }) as { items: CustomerCatalogItem[] };
-      setCatalogItems(data.items ?? []);
+      const items = data.items ?? [];
+      for (const item of items) {
+        const prevAvail = prevAvailRef.current.get(item.wic);
+        if (prevAvail !== undefined && prevAvail !== item.availability) {
+          pushToast(`${item.description || item.wic} — now ${item.availability}`);
+        }
+      }
+      prevAvailRef.current = new Map(items.map((i) => [i.wic, i.availability]));
+      setCatalogItems(items);
     } finally {
       if (!silent) setLoadingCatalog(false);
     }
@@ -98,7 +123,16 @@ export default function PortalClient() {
         return;
       }
       const data = (await res.json()) as { items: PricedItem[] };
-      setPricedItems(data.items ?? []);
+      const items = data.items ?? [];
+      for (const item of items) {
+        const prevStock = prevStockRef.current.get(item.partNumber);
+        if (prevStock !== undefined && item.stock < prevStock) {
+          const sold = prevStock - item.stock;
+          pushToast(`${sold} ${sold === 1 ? 'unit' : 'units'} sold — ${item.description || item.partNumber}`);
+        }
+      }
+      prevStockRef.current = new Map(items.map((i) => [i.partNumber, i.stock]));
+      setPricedItems(items);
     } finally {
       if (!silent) setLoadingPriced(false);
     }
@@ -125,6 +159,9 @@ export default function PortalClient() {
     setPricedSelected(new Set());
     setSearch('');
     setPricedSearch('');
+    setToasts([]);
+    prevStockRef.current = new Map();
+    prevAvailRef.current = new Map();
   };
 
   const toggleCatalogSelected = (wic: string) => {
@@ -469,6 +506,14 @@ export default function PortalClient() {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="toast-stack">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast">
+            {t.text}
+          </div>
+        ))}
       </div>
     </div>
   );
