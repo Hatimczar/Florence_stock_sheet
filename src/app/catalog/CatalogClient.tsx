@@ -164,7 +164,14 @@ function CatalogContent() {
                         <td>
                           {item.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.image} alt="" width={32} height={32} style={{ borderRadius: 6, objectFit: 'contain', background: 'var(--fill-secondary)' }} />
+                            <img
+                              src={item.image}
+                              alt=""
+                              width={32}
+                              height={32}
+                              className="thumb-hover"
+                              style={{ borderRadius: 6, objectFit: 'contain', background: 'var(--fill-secondary)' }}
+                            />
                           ) : (
                             <div style={{ width: 32, height: 32, borderRadius: 6, background: 'var(--fill-secondary)' }} />
                           )}

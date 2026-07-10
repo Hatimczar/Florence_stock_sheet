@@ -444,6 +444,7 @@ export default function PortalClient() {
                                 alt=""
                                 width={36}
                                 height={36}
+                                className="thumb-hover"
                                 style={{ borderRadius: 8, objectFit: 'contain', background: 'var(--fill-secondary)', flexShrink: 0 }}
                               />
                             ) : (

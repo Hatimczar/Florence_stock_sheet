@@ -505,7 +505,7 @@ body {
 .table-card {
   background: var(--surface);
   border-radius: var(--r-lg);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 0 0 0.5px var(--sep);
 }
 .table-scroll {
@@ -711,9 +711,21 @@ body {
 .ios-group {
   background: var(--surface);
   border-radius: var(--r-lg);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 0 0 0.5px var(--sep);
   margin-bottom: 14px;
+}
+
+.thumb-hover {
+  transition: transform 0.15s ease;
+  cursor: zoom-in;
+  position: relative;
+  transform-origin: left center;
+}
+.thumb-hover:hover {
+  transform: scale(3);
+  z-index: 30;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .ios-row {
   display: flex;
