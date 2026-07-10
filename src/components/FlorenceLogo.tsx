@@ -9,6 +9,7 @@ export function FlorenceLogo({ size = 28 }: { size?: number }) {
         width={size}
         height={size}
         className="brand-logo-light"
+        style={{ width: size, height: size }}
         priority
       />
       <Image
@@ -17,6 +18,7 @@ export function FlorenceLogo({ size = 28 }: { size?: number }) {
         width={size}
         height={size}
         className="brand-logo-dark"
+        style={{ width: size, height: size }}
         priority
       />
     </>

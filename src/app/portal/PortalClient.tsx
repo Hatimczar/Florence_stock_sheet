@@ -7,7 +7,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { FlorenceLogo } from '@/components/FlorenceLogo';
 import { ProductThumb } from '@/components/ProductThumb';
-import { fetchCustomerCatalog, CustomerCatalogItem } from '@/lib/catalogApi';
+import { CustomerCatalogItem } from '@/lib/catalogApi';
 
 const MANUAL_STOCK_VENDOR = 'Apple';
 
@@ -28,7 +28,7 @@ interface PricedItem {
 }
 
 const WHATSAPP_NUMBER = '971525348090';
-const STOCK_POLL_INTERVAL_MS = 15_000;
+const STOCK_POLL_INTERVAL_MS = 8_000;
 
 const AVAIL_CLASS: Record<string, string> = {
   Available: 'avail-yes',
@@ -64,7 +64,7 @@ export default function PortalClient() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/customer/me');
+        const res = await fetch('/api/customer/me', { cache: 'no-store' });
         const data = (res.ok ? await res.json() : { customer: null }) as { customer: CustomerInfo | null };
         setCustomer(data.customer);
         if (data.customer) setActiveBrand(data.customer.enabledBrands[0] ?? null);
@@ -77,8 +77,13 @@ export default function PortalClient() {
   const loadCatalog = async (silent = false) => {
     if (!silent) setLoadingCatalog(true);
     try {
-      const catalog = await fetchCustomerCatalog();
-      setCatalogItems(catalog);
+      const res = await fetch('/api/customer/catalog', { cache: 'no-store' });
+      if (res.status === 401) {
+        setCustomer(null);
+        return;
+      }
+      const data = (res.ok ? await res.json() : { items: [] }) as { items: CustomerCatalogItem[] };
+      setCatalogItems(data.items ?? []);
     } finally {
       if (!silent) setLoadingCatalog(false);
     }
@@ -87,7 +92,11 @@ export default function PortalClient() {
   const loadPriced = async (silent = false) => {
     if (!silent) setLoadingPriced(true);
     try {
-      const res = await fetch('/api/customer/browse');
+      const res = await fetch('/api/customer/browse', { cache: 'no-store' });
+      if (res.status === 401) {
+        setCustomer(null);
+        return;
+      }
       const data = (await res.json()) as { items: PricedItem[] };
       setPricedItems(data.items ?? []);
     } finally {
