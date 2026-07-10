@@ -6,6 +6,7 @@ import { CatalogItem } from '@/lib/catalog';
 import { fetchAdminCatalog, syncCatalogApi } from '@/lib/catalogApi';
 import { AdminGate } from '@/components/AdminGate';
 import { AdminShell } from '@/components/AdminShell';
+import { ProductThumb } from '@/components/ProductThumb';
 
 const AVAIL_LABEL: Record<string, string> = { yes: 'Available', 'on demand': 'On Demand', limited: 'Limited' };
 const AVAIL_CLASS: Record<string, string> = { yes: 'pill-green', 'on demand': 'pill-orange', limited: 'pill-red' };
@@ -162,19 +163,7 @@ function CatalogContent() {
                     filtered.map((item) => (
                       <tr key={item.wic}>
                         <td>
-                          {item.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.image}
-                              alt=""
-                              width={32}
-                              height={32}
-                              className="thumb-hover"
-                              style={{ borderRadius: 6, objectFit: 'contain', background: 'var(--fill-secondary)' }}
-                            />
-                          ) : (
-                            <div style={{ width: 32, height: 32, borderRadius: 6, background: 'var(--fill-secondary)' }} />
-                          )}
+                          <ProductThumb src={item.image} size={32} radius={6} />
                         </td>
                         <td className="mono">{item.wic}</td>
                         <td className="desc-cell">{item.description || '—'}</td>

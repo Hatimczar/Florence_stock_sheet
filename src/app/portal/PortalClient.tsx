@@ -6,6 +6,7 @@ import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { FlorenceLogo } from '@/components/FlorenceLogo';
+import { ProductThumb } from '@/components/ProductThumb';
 import { fetchCustomerCatalog, CustomerCatalogItem } from '@/lib/catalogApi';
 
 const MANUAL_STOCK_VENDOR = 'Apple';
@@ -437,19 +438,7 @@ export default function PortalClient() {
                             >
                               <Check />
                             </button>
-                            {item.image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={item.image}
-                                alt=""
-                                width={36}
-                                height={36}
-                                className="thumb-hover"
-                                style={{ borderRadius: 8, objectFit: 'contain', background: 'var(--fill-secondary)', flexShrink: 0 }}
-                              />
-                            ) : (
-                              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--fill-secondary)', flexShrink: 0 }} />
-                            )}
+                            <ProductThumb src={item.image} size={36} radius={8} style={{ flexShrink: 0 }} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="row-title mono" style={{ fontSize: 13 }}>
                                 {item.wic}
