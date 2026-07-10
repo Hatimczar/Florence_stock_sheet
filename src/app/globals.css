@@ -681,8 +681,8 @@ body {
   cursor: pointer;
 }
 .ios-large-title {
-  padding: 4px 20px 12px;
-  max-width: 900px;
+  padding: 4px 24px 12px;
+  max-width: 1400px;
   margin: 0 auto;
   min-width: 0;
   width: 100%;
@@ -700,9 +700,9 @@ body {
 }
 
 .ios-content {
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 4px 20px 60px;
+  padding: 4px 24px 60px;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
