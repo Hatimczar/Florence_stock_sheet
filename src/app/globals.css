@@ -453,11 +453,13 @@ body {
 }
 .row-title {
   font-size: 14px;
+  overflow-wrap: break-word;
 }
 .row-sub {
   font-size: 12px;
   color: var(--muted);
   margin-top: 1px;
+  overflow-wrap: break-word;
 }
 .field-row {
   padding: 10px 16px;
@@ -985,3 +987,4 @@ body {
     z-index: 90;
   }
 }
+
