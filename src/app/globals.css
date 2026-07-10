@@ -205,17 +205,19 @@ body {
 .mac-window {
   position: relative;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1640px;
   border-radius: var(--r-window);
   overflow: hidden;
   background: var(--background);
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35), 0 2px 0 rgba(255, 255, 255, 0.06) inset;
   border: 1px solid rgba(0, 0, 0, 0.15);
   display: flex;
-  min-height: 760px;
+  min-height: 500px;
+  height: calc(100vh - 48px);
+  max-height: 900px;
 }
 .mac-window.portal-window {
-  max-width: 1400px;
+  max-width: 1900px;
 }
 .mac-sidebar {
   width: 230px;
@@ -228,6 +230,39 @@ body {
   padding: 14px 10px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  transition: width 0.2s ease, padding 0.2s ease, opacity 0.15s ease, transform 0.25s ease;
+}
+.mac-sidebar.sb-closed {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-right: none;
+}
+.menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: rgba(127, 127, 127, 0.12);
+  cursor: pointer;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+.menu-toggle:hover {
+  background: rgba(127, 127, 127, 0.2);
+}
+.menu-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+.mac-backdrop {
+  display: none;
 }
 .mac-brand {
   display: flex;
@@ -915,26 +950,38 @@ body {
 @media (max-width: 820px) {
   .mac-window {
     min-height: 0;
+  }
+  /* Sidebar becomes an off-canvas flyout drawer on mobile — a horizontal scroll
+     strip doesn't work once there are 10s of brands to list. */
+  .mac-sidebar,
+  .mac-sidebar.sb-closed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    max-width: 80vw;
     flex-direction: column;
+    padding: 16px 12px;
+    opacity: 1;
+    overflow-y: auto;
+    z-index: 100;
+    transform: translateX(-100%);
+    background: var(--surface);
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.35);
   }
-  .mac-sidebar {
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    padding: 10px;
-    overflow-x: auto;
-  }
-  .mac-nav-section {
-    display: none;
-  }
-  .mac-brand {
-    padding: 0 10px 0 0;
+  .mac-sidebar.sb-open {
+    transform: translateX(0);
   }
   .mac-nav-item {
-    width: auto;
+    width: 100%;
     flex-shrink: 0;
   }
-  .portal-account {
-    display: none;
+  .mac-backdrop.show {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 90;
   }
 }

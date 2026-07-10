@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check } from 'lucide-react';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check, Menu } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -40,6 +40,11 @@ export default function PortalClient() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth > 820);
+  }, []);
 
   // Availability-only catalog — every brand except Apple (Apple joins this list only when its prices are off).
   const [catalogItems, setCatalogItems] = useState<CustomerCatalogItem[]>([]);
@@ -217,9 +222,11 @@ export default function PortalClient() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
       <div className="mac-window portal-window">
-        <div className="mac-sidebar">
+        <div className={`mac-backdrop ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)} />
+
+        <div className={`mac-sidebar ${sidebarOpen ? 'sb-open' : 'sb-closed'}`}>
           <div className="mac-brand">
             <div className="mark">
               <FlorenceLogo size={20} />
@@ -231,7 +238,10 @@ export default function PortalClient() {
           {customer.enabledBrands.map((brand) => (
             <button
               key={brand}
-              onClick={() => setActiveBrand(brand)}
+              onClick={() => {
+                setActiveBrand(brand);
+                if (window.innerWidth <= 820) setSidebarOpen(false);
+              }}
               className={`mac-nav-item ${activeBrand === brand ? 'active' : ''}`}
             >
               <BrandLogo vendor={brand} size={15} />
@@ -254,7 +264,12 @@ export default function PortalClient() {
 
         <div className="mac-main">
           <div className="mac-toolbar">
-            <h2>{activeBrand ?? 'Client Portal'}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button className="menu-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle sidebar">
+                <Menu />
+              </button>
+              <h2>{activeBrand ?? 'Client Portal'}</h2>
+            </div>
             <div className="toolbar-actions">
               <ThemeToggle />
               <button className="toolbar-btn" onClick={handleLogout}>
