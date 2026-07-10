@@ -147,8 +147,8 @@ function CatalogContent() {
                     <th>Description</th>
                     <th>Brand</th>
                     <th>Category</th>
-                    <th className="num">Retail Price</th>
-                    <th className="num">My Price</th>
+                    <th className="num">Retail Price (USD)</th>
+                    <th className="num">Cost (USD)</th>
                     <th>Availability</th>
                   </tr>
                 </thead>
@@ -169,8 +169,8 @@ function CatalogContent() {
                         <td className="desc-cell">{item.description || '—'}</td>
                         <td>{item.vendor}</td>
                         <td>{item.group}</td>
-                        <td className="num mono price-cell">{item.retailPrice !== null ? item.retailPrice.toFixed(2) : '—'}</td>
-                        <td className="num mono price-cell">{item.myPrice !== null ? item.myPrice.toFixed(2) : '—'}</td>
+                        <td className="num mono price-cell">{item.retailPrice !== null ? `$${item.retailPrice.toFixed(2)}` : '—'}</td>
+                        <td className="num mono price-cell">{item.myPrice !== null ? `$${item.myPrice.toFixed(2)}` : '—'}</td>
                         <td>
                           <span className={`pill ${AVAIL_CLASS[item.avail] ?? ''}`}>{AVAIL_LABEL[item.avail] ?? (item.avail || '—')}</span>
                         </td>
