@@ -33,7 +33,7 @@ interface StockToast {
 }
 
 const WHATSAPP_NUMBER = '971525348090';
-const STOCK_POLL_INTERVAL_MS = 8_000;
+const STOCK_POLL_INTERVAL_MS = 15_000;
 const TOAST_LIFETIME_MS = 6_000;
 
 const AVAIL_CLASS: Record<string, string> = {
