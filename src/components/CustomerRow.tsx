@@ -2,15 +2,20 @@
 
 import { useState } from 'react';
 import { Pencil, Trash2, Check, X, Tag } from 'lucide-react';
-import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
+import { PublicCustomer, CategoryMarkup, VendorMarkup } from '@/lib/customers';
 import { updateCustomerApi, deleteCustomerApi } from '@/lib/customerApi';
 import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 import { CategoryMarkupEditor } from './CategoryMarkupEditor';
+import { VendorMarkupEditor } from './VendorMarkupEditor';
 import { BrandAccessEditor } from './BrandAccessEditor';
 import { BrandLogo } from './BrandLogo';
 
 function formatMarkup(m: CategoryMarkup): string {
   return m.markupType === 'percent' ? `${(m.markupValue * 100).toFixed(1)}%` : `AED ${m.markupValue.toFixed(2)} flat`;
+}
+
+function formatVendorMarkup(m: VendorMarkup): string {
+  return m.markupType === 'percent' ? `${(m.markupValue * 100).toFixed(1)}%` : `$${m.markupValue.toFixed(2)} flat`;
 }
 
 function initials(name: string, email: string): string {
@@ -37,6 +42,7 @@ export function CustomerRow({
   const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>(customer.categoryMarkups);
   const [enabledBrands, setEnabledBrands] = useState<string[]>(customer.enabledBrands);
   const [appleShowPrices, setAppleShowPrices] = useState(customer.appleShowPrices);
+  const [vendorMarkups, setVendorMarkups] = useState<VendorMarkup[]>(customer.vendorMarkups);
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +57,7 @@ export function CustomerRow({
         categoryMarkups,
         enabledBrands,
         appleShowPrices,
+        vendorMarkups,
         ...(newPassword ? { password: newPassword } : {}),
       });
       onUpdated(updated);
@@ -123,6 +130,18 @@ export function CustomerRow({
               </span>
             )}
           </div>
+          {customer.vendorMarkups.length > 0 && (
+            <>
+              <div className="perm-label">Vendor brand pricing</div>
+              <div className="perm-row">
+                {customer.vendorMarkups.map((m) => (
+                  <span key={m.vendor} className="pill" style={{ background: 'var(--fill)', gap: 4 }}>
+                    <Tag size={11} /> {m.vendor}: {formatVendorMarkup(m)}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
         </>
       ) : (
         <>
@@ -138,7 +157,7 @@ export function CustomerRow({
           <div className="perm-label">Categories &amp; markup</div>
           <CategoryMarkupEditor categories={categories} value={categoryMarkups} onChange={setCategoryMarkups} />
           <div className="perm-label" style={{ marginTop: 12 }}>
-            Vendor catalog brands — Apple shows real pricing (with markup); every other brand is availability only
+            Vendor catalog brands — priced brands (set below) show real pricing; everything else is availability only
           </div>
           <div className="perm-row">
             <BrandAccessEditor vendors={vendors} value={enabledBrands} onChange={setEnabledBrands} />
@@ -152,6 +171,18 @@ export function CustomerRow({
             >
               <Tag size={13} /> Apple prices: {appleShowPrices ? 'On (customer sees price)' : 'Off (availability only)'}
             </button>
+          )}
+          {enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR).length > 0 && (
+            <>
+              <div className="perm-label" style={{ marginTop: 12 }}>
+                Vendor brand pricing — brands this customer can see, with their own markup
+              </div>
+              <VendorMarkupEditor
+                vendors={enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR)}
+                value={vendorMarkups}
+                onChange={setVendorMarkups}
+              />
+            </>
           )}
           {error && <p style={{ marginTop: 8, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}
           <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>

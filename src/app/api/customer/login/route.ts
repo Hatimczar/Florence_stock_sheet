@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     companyName: customer.companyName,
     enabledBrands: customer.enabledBrands,
     appleShowPrices: customer.appleShowPrices,
+    pricedVendorBrands: customer.vendorMarkups.map((m) => m.vendor),
   });
   res.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,

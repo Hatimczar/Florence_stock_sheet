@@ -2,7 +2,7 @@
 
 import { BrandLogo } from './BrandLogo';
 
-/** Toggle chips granting a customer access to specific brand catalogs (IT4Profit vendors + "Apple" for the manual sheet). No pricing is ever shown to customers. */
+/** Toggle chips granting a customer access to specific brand catalogs (IT4Profit vendors + "Apple" for the manual sheet). A brand only shows pricing if it also has a markup set (see CategoryMarkupEditor for Apple, VendorMarkupEditor for everything else) — access alone only grants availability visibility. */
 export function BrandAccessEditor({
   vendors,
   value,

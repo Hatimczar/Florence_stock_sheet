@@ -17,13 +17,16 @@ interface CustomerInfo {
   companyName: string;
   enabledBrands: string[];
   appleShowPrices: boolean;
+  pricedVendorBrands: string[];
 }
 
 interface PricedItem {
   partNumber: string;
   description: string;
   category: string;
-  stock: number;
+  vendor: string;
+  stock?: number;
+  availability?: string;
   price: number;
 }
 
@@ -125,13 +128,21 @@ export default function PortalClient() {
       const data = (await res.json()) as { items: PricedItem[] };
       const items = data.items ?? [];
       for (const item of items) {
-        const prevStock = prevStockRef.current.get(item.partNumber);
-        if (prevStock !== undefined && item.stock < prevStock) {
-          const sold = prevStock - item.stock;
-          pushToast(`${sold} ${sold === 1 ? 'unit' : 'units'} sold — ${item.description || item.partNumber}`);
+        if (typeof item.stock === 'number') {
+          const prevStock = prevStockRef.current.get(item.partNumber);
+          if (prevStock !== undefined && item.stock < prevStock) {
+            const sold = prevStock - item.stock;
+            pushToast(`${sold} ${sold === 1 ? 'unit' : 'units'} sold — ${item.description || item.partNumber}`);
+          }
+          prevStockRef.current.set(item.partNumber, item.stock);
+        } else if (item.availability) {
+          const prevAvail = prevAvailRef.current.get(item.partNumber);
+          if (prevAvail !== undefined && prevAvail !== item.availability) {
+            pushToast(`${item.description || item.partNumber} — now ${item.availability}`);
+          }
+          prevAvailRef.current.set(item.partNumber, item.availability);
         }
       }
-      prevStockRef.current = new Map(items.map((i) => [i.partNumber, i.stock]));
       setPricedItems(items);
     } finally {
       if (!silent) setLoadingPriced(false);
@@ -183,9 +194,11 @@ export default function PortalClient() {
   };
 
   const isAppleTab = activeBrand === MANUAL_STOCK_VENDOR;
-  const showApplePriced = isAppleTab && !!customer?.appleShowPrices;
+  const showBrandPriced = isAppleTab
+    ? !!customer?.appleShowPrices
+    : !!activeBrand && !!customer?.pricedVendorBrands.includes(activeBrand);
 
-  // ---- Availability view (every brand except priced-Apple) ----
+  // ---- Availability view (every brand not priced for this customer) ----
   const brandItems = useMemo(() => catalogItems.filter((i) => i.vendor === activeBrand), [catalogItems, activeBrand]);
 
   const catalogCategories = useMemo(
@@ -223,26 +236,31 @@ export default function PortalClient() {
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // ---- Priced Apple view ----
+  // ---- Priced view (Apple, or any vendor brand with a markup set for this customer) ----
+  const brandPricedItems = useMemo(() => pricedItems.filter((i) => i.vendor === activeBrand), [pricedItems, activeBrand]);
+
   const pricedCategories = useMemo(
-    () => Array.from(new Set(pricedItems.map((i) => i.category).filter(Boolean))).sort(),
-    [pricedItems]
+    () => Array.from(new Set(brandPricedItems.map((i) => i.category).filter(Boolean))).sort(),
+    [brandPricedItems]
   );
 
   const pricedFiltered = useMemo(() => {
     const q = pricedSearch.trim().toLowerCase();
-    return pricedItems.filter(
+    return brandPricedItems.filter(
       (i) =>
         (pricedCategory === 'all' || i.category === pricedCategory) &&
         (!q || i.partNumber.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q))
     );
-  }, [pricedItems, pricedCategory, pricedSearch]);
+  }, [brandPricedItems, pricedCategory, pricedSearch]);
 
   const handleSendPricedWhatsApp = () => {
-    const selectedItems = pricedItems.filter((i) => pricedSelected.has(i.partNumber));
+    const selectedItems = brandPricedItems.filter((i) => pricedSelected.has(i.partNumber));
     if (selectedItems.length === 0) return;
     const lines = selectedItems.map(
-      (i, idx) => `${idx + 1}. ${i.partNumber}${i.description ? ` — ${i.description}` : ''}\n   Stock: ${i.stock} | Price: AED ${i.price.toFixed(2)}`
+      (i, idx) =>
+        `${idx + 1}. ${i.partNumber}${i.description ? ` — ${i.description}` : ''}\n   ${
+          typeof i.stock === 'number' ? `Stock: ${i.stock}` : `Availability: ${i.availability}`
+        } | Price: ${isAppleTab ? 'AED' : 'USD'} ${i.price.toFixed(2)}`
     );
     const message = [`*Stock Request from ${customer!.name}${customer!.companyName ? ` (${customer!.companyName})` : ''}*`, '', ...lines].join('\n');
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
@@ -260,7 +278,7 @@ export default function PortalClient() {
     return (
       <PortalAuthForm
         onLoggedIn={(c) => {
-          setCustomer(c as CustomerInfo);
+          setCustomer(c);
           setActiveBrand(c.enabledBrands[0] ?? null);
         }}
       />
@@ -330,10 +348,10 @@ export default function PortalClient() {
                 <PackageSearch size={24} />
                 No brands are enabled on your account yet. Ask Florence to enable at least one brand.
               </div>
-            ) : showApplePriced ? (
+            ) : showBrandPriced ? (
               <>
                 <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>Stock &amp; Pricing</span>
+                  <span>{isAppleTab ? 'Stock & Pricing' : 'Availability & Pricing'}</span>
                   <button className="toolbar-btn" onClick={() => loadPriced()} disabled={loadingPriced}>
                     <RefreshCw /> Refresh
                   </button>
@@ -378,7 +396,7 @@ export default function PortalClient() {
                           <th>Part Number</th>
                           <th>Description</th>
                           <th>Category</th>
-                          <th className="num">Stock</th>
+                          <th className="num">{isAppleTab ? 'Stock' : 'Availability'}</th>
                           <th className="num">Price</th>
                         </tr>
                       </thead>
@@ -392,7 +410,7 @@ export default function PortalClient() {
                         ) : pricedFiltered.length === 0 ? (
                           <tr>
                             <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
-                              {pricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
+                              {brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
                             </td>
                           </tr>
                         ) : (
@@ -410,9 +428,19 @@ export default function PortalClient() {
                               <td className="desc-cell">{item.description || '—'}</td>
                               <td>{item.category}</td>
                               <td className="num mono stock-cell">
-                                {item.stock > 0 ? item.stock : <span className="pill pill-red">Out of Stock</span>}
+                                {typeof item.stock === 'number' ? (
+                                  item.stock > 0 ? (
+                                    item.stock
+                                  ) : (
+                                    <span className="pill pill-red">Out of Stock</span>
+                                  )
+                                ) : (
+                                  <span className={`pill ${AVAIL_CLASS[item.availability ?? ''] ?? ''}`}>{item.availability}</span>
+                                )}
                               </td>
-                              <td className="num mono price-cell">AED {item.price.toFixed(2)}</td>
+                              <td className="num mono price-cell">
+                                {isAppleTab ? 'AED' : 'USD'} {item.price.toFixed(2)}
+                              </td>
                             </tr>
                           ))
                         )}

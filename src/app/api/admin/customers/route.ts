@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCustomer, listPublicCustomers, CategoryMarkup } from '@/lib/customers';
+import { createCustomer, listPublicCustomers, CategoryMarkup, VendorMarkup } from '@/lib/customers';
 import { requireAdmin } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     categoryMarkups: CategoryMarkup[];
     enabledBrands?: string[];
     appleShowPrices?: boolean;
+    vendorMarkups?: VendorMarkup[];
   };
 
   if (!body.email || !body.password || !Array.isArray(body.categoryMarkups)) {

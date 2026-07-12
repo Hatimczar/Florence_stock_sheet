@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, UserPlus, Tag } from 'lucide-react';
-import { PublicCustomer, CategoryMarkup } from '@/lib/customers';
+import { PublicCustomer, CategoryMarkup, VendorMarkup } from '@/lib/customers';
 import { fetchCustomers, createCustomerApi, fetchCategories, fetchCatalogVendors } from '@/lib/customerApi';
 import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 import { CustomerRow } from '@/components/CustomerRow';
 import { PendingCustomerRow } from '@/components/PendingCustomerRow';
 import { CategoryMarkupEditor } from '@/components/CategoryMarkupEditor';
+import { VendorMarkupEditor } from '@/components/VendorMarkupEditor';
 import { BrandAccessEditor } from '@/components/BrandAccessEditor';
 import { AdminGate } from '@/components/AdminGate';
 import { AdminShell } from '@/components/AdminShell';
@@ -33,6 +34,7 @@ function CustomersContent() {
   const [categoryMarkups, setCategoryMarkups] = useState<CategoryMarkup[]>([]);
   const [enabledBrands, setEnabledBrands] = useState<string[]>([]);
   const [appleShowPrices, setAppleShowPrices] = useState(true);
+  const [vendorMarkups, setVendorMarkups] = useState<VendorMarkup[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [vendors, setVendors] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
@@ -62,7 +64,7 @@ function CustomersContent() {
     }
     setCreating(true);
     try {
-      const customer = await createCustomerApi({ name, companyName, email, password, categoryMarkups, enabledBrands, appleShowPrices });
+      const customer = await createCustomerApi({ name, companyName, email, password, categoryMarkups, enabledBrands, appleShowPrices, vendorMarkups });
       setCustomers((prev) => [...prev, customer]);
       setName('');
       setCompanyName('');
@@ -71,6 +73,7 @@ function CustomersContent() {
       setCategoryMarkups([]);
       setEnabledBrands([]);
       setAppleShowPrices(true);
+      setVendorMarkups([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create customer');
     } finally {
@@ -142,7 +145,7 @@ function CustomersContent() {
       </div>
 
       <div style={{ marginTop: 16 }}>
-        <div className="perm-label">Vendor catalog brands — Apple shows real pricing (with markup); every other brand is availability only</div>
+        <div className="perm-label">Vendor catalog brands — priced brands (set below) show real pricing; everything else is availability only</div>
         <div className="perm-row">
           <BrandAccessEditor vendors={vendors} value={enabledBrands} onChange={setEnabledBrands} />
         </div>
@@ -157,6 +160,17 @@ function CustomersContent() {
         >
           <Tag size={13} /> Apple prices: {appleShowPrices ? 'On (customer sees price)' : 'Off (availability only)'}
         </button>
+      )}
+
+      {enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR).length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="perm-label">Vendor brand pricing — brands this customer can see, with their own markup</div>
+          <VendorMarkupEditor
+            vendors={enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR)}
+            value={vendorMarkups}
+            onChange={setVendorMarkups}
+          />
+        </div>
       )}
 
       {error && <p style={{ marginTop: 12, fontSize: 12, color: 'var(--loss)' }}>{error}</p>}

@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
       companyName: customer.companyName,
       enabledBrands: customer.enabledBrands,
       appleShowPrices: customer.appleShowPrices,
+      pricedVendorBrands: customer.vendorMarkups.map((m) => m.vendor),
     },
   });
 }

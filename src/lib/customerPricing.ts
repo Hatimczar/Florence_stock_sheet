@@ -2,6 +2,7 @@ import { getStoredList } from './kv';
 import { mergeStockAndPrice } from './merge';
 import { normalizePartNumber } from './parseFile';
 import { Customer, CategoryMarkup } from './customers';
+import { getCatalog, CUSTOMER_AVAIL_LABEL } from './catalog';
 
 export interface CustomerLookupResult {
   partNumber: string;
@@ -95,4 +96,50 @@ export async function getManualStockCatalogItems(): Promise<ManualStockCatalogIt
       group: row.category,
       availability: 'Available' as const,
     }));
+}
+
+export interface VendorPricedItem {
+  partNumber: string;
+  description: string;
+  category: string;
+  vendor: string;
+  availability: string;
+  price: number;
+}
+
+/**
+ * Vendor-catalog (IT4Profit) items priced with this customer's per-brand markup — the same idea as
+ * Apple's categoryMarkups, but keyed by vendor since customers pick whole brands here rather than
+ * categories. A brand only comes out of this when it has a markup entry; unmatched brands stay
+ * availability-only via /api/customer/catalog instead. There's no numeric stock count on this feed
+ * (only a yes/on-demand/limited status), so availability replaces the Stock column Apple has.
+ */
+export async function getVendorPricedItemsForCustomer(
+  customer: Pick<Customer, 'enabledBrands' | 'vendorMarkups'>
+): Promise<VendorPricedItem[]> {
+  if (customer.vendorMarkups.length === 0) return [];
+  const enabled = new Set(customer.enabledBrands);
+  const markupByVendor = new Map(customer.vendorMarkups.map((m) => [m.vendor, m]));
+
+  const catalog = await getCatalog();
+  if (!catalog) return [];
+
+  const results: VendorPricedItem[] = [];
+  for (const item of catalog.items) {
+    if (!enabled.has(item.vendor)) continue;
+    const markup = markupByVendor.get(item.vendor);
+    if (!markup) continue;
+    const availLabel = CUSTOMER_AVAIL_LABEL[item.avail];
+    if (!availLabel) continue;
+    if (item.retailPrice === null) continue;
+    results.push({
+      partNumber: item.wic,
+      description: item.description,
+      category: item.group,
+      vendor: item.vendor,
+      availability: availLabel,
+      price: applyMarkup(item.retailPrice, markup),
+    });
+  }
+  return results;
 }

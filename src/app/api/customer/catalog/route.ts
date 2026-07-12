@@ -26,10 +26,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const pricedVendors = new Set(customer.vendorMarkups.map((m) => m.vendor));
+
   const catalog = await getCatalog();
   if (catalog) {
     for (const item of catalog.items) {
       if (!enabled.has(item.vendor) || !CUSTOMER_AVAIL_LABEL[item.avail]) continue;
+      // Priced vendor brands are served via /api/customer/browse instead.
+      if (pricedVendors.has(item.vendor)) continue;
       items.push({
         wic: item.wic,
         description: item.description,

@@ -10,6 +10,12 @@ export interface CategoryMarkup {
   markupValue: number; // 0.20 for 20% if percent, or AED amount if fixed
 }
 
+export interface VendorMarkup {
+  vendor: string;
+  markupType: MarkupType;
+  markupValue: number; // 0.20 for 20% if percent, or USD amount if fixed
+}
+
 export interface Customer {
   id: string;
   email: string;
@@ -24,6 +30,10 @@ export interface Customer {
   // Apple is the one brand that can show real pricing (with this customer's category markup applied). Admin can turn it
   // off per customer to make Apple behave like every other brand — availability only, no price.
   appleShowPrices: boolean;
+  // Vendor-catalog brands (Logitech, Kingston, etc.) with their own markup — same idea as categoryMarkups, but
+  // keyed by vendor since customers pick whole brands rather than categories for this pipeline. A brand only shows
+  // priced (retail price + markup) when it has an entry here; otherwise it stays availability-only.
+  vendorMarkups: VendorMarkup[];
   createdAt: string;
 }
 
@@ -48,6 +58,7 @@ function normalizeCustomer(raw: Partial<Customer> & Pick<Customer, 'id' | 'email
     categoryMarkups: raw.categoryMarkups ?? [],
     enabledBrands: raw.enabledBrands ?? [],
     appleShowPrices: raw.appleShowPrices ?? true,
+    vendorMarkups: raw.vendorMarkups ?? [],
     createdAt: raw.createdAt ?? new Date().toISOString(),
   };
 }
@@ -90,6 +101,7 @@ export async function createCustomer(params: {
   categoryMarkups: CategoryMarkup[];
   enabledBrands?: string[];
   appleShowPrices?: boolean;
+  vendorMarkups?: VendorMarkup[];
 }): Promise<PublicCustomer> {
   const customers = await listCustomers();
   const normalizedEmail = params.email.trim().toLowerCase();
@@ -106,6 +118,7 @@ export async function createCustomer(params: {
     categoryMarkups: params.categoryMarkups,
     enabledBrands: params.enabledBrands ?? [],
     appleShowPrices: params.appleShowPrices ?? true,
+    vendorMarkups: params.vendorMarkups ?? [],
     createdAt: new Date().toISOString(),
   };
   customers.push(customer);
@@ -136,6 +149,7 @@ export async function createSignup(params: {
     categoryMarkups: [],
     enabledBrands: [],
     appleShowPrices: true,
+    vendorMarkups: [],
     createdAt: new Date().toISOString(),
   };
   customers.push(customer);
@@ -148,12 +162,13 @@ export async function createSignup(params: {
 export async function approveCustomer(
   id: string,
   categoryMarkups: CategoryMarkup[],
-  enabledBrands: string[] = []
+  enabledBrands: string[] = [],
+  vendorMarkups: VendorMarkup[] = []
 ): Promise<PublicCustomer | null> {
   const customers = await listCustomers();
   const idx = customers.findIndex((c) => c.id === id);
   if (idx === -1) return null;
-  const updated: Customer = { ...customers[idx], status: 'approved', categoryMarkups, enabledBrands };
+  const updated: Customer = { ...customers[idx], status: 'approved', categoryMarkups, enabledBrands, vendorMarkups };
   customers[idx] = updated;
   await saveCustomers(customers);
   const { passwordHash: _passwordHash, ...publicCustomer } = updated;
@@ -162,7 +177,9 @@ export async function approveCustomer(
 
 export async function updateCustomer(
   id: string,
-  patch: Partial<Pick<Customer, 'name' | 'companyName' | 'categoryMarkups' | 'enabledBrands' | 'appleShowPrices'>> & {
+  patch: Partial<
+    Pick<Customer, 'name' | 'companyName' | 'categoryMarkups' | 'enabledBrands' | 'appleShowPrices' | 'vendorMarkups'>
+  > & {
     password?: string;
   }
 ): Promise<PublicCustomer | null> {
@@ -178,6 +195,7 @@ export async function updateCustomer(
     categoryMarkups: patch.categoryMarkups ?? existing.categoryMarkups,
     enabledBrands: patch.enabledBrands ?? existing.enabledBrands,
     appleShowPrices: patch.appleShowPrices ?? existing.appleShowPrices,
+    vendorMarkups: patch.vendorMarkups ?? existing.vendorMarkups,
     passwordHash: patch.password ? await hashPassword(patch.password) : existing.passwordHash,
   };
   customers[idx] = updated;

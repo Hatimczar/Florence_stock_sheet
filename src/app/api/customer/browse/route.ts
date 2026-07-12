@@ -1,19 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentCustomer } from '@/lib/session';
-import { browsePartsForCustomer } from '@/lib/customerPricing';
+import { browsePartsForCustomer, getVendorPricedItemsForCustomer } from '@/lib/customerPricing';
 import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
-// Priced items only ever apply to the Apple brand, and only when the admin hasn't turned pricing off for this customer.
+interface PricedItem {
+  partNumber: string;
+  description: string;
+  category: string;
+  vendor: string;
+  stock?: number;
+  availability?: string;
+  price: number;
+}
+
+// Priced items: Apple (real stock, categoryMarkups) when its prices aren't turned off for this customer,
+// plus any vendor-catalog brand the admin has set a markup for (availability status instead of stock).
 export async function GET(req: NextRequest) {
   const customer = await getCurrentCustomer(req);
   if (!customer) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
 
-  if (!customer.enabledBrands.includes(MANUAL_STOCK_VENDOR) || !customer.appleShowPrices) {
-    return NextResponse.json({ items: [] });
+  const items: PricedItem[] = [];
+
+  if (customer.enabledBrands.includes(MANUAL_STOCK_VENDOR) && customer.appleShowPrices) {
+    const appleItems = await browsePartsForCustomer(customer);
+    items.push(...appleItems.map((i) => ({ ...i, vendor: MANUAL_STOCK_VENDOR })));
   }
 
-  const items = await browsePartsForCustomer(customer);
+  const vendorItems = await getVendorPricedItemsForCustomer(customer);
+  items.push(...vendorItems);
+
   return NextResponse.json({ items });
 }

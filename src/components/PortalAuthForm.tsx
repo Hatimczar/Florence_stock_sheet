@@ -9,6 +9,8 @@ interface CustomerInfo {
   email: string;
   companyName: string;
   enabledBrands: string[];
+  appleShowPrices: boolean;
+  pricedVendorBrands: string[];
 }
 
 export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: CustomerInfo) => void }) {
@@ -48,13 +50,22 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
         email?: string;
         companyName?: string;
         enabledBrands?: string[];
+        appleShowPrices?: boolean;
+        pricedVendorBrands?: string[];
         error?: string;
       };
       if (!res.ok || !data.ok) {
         setError(data.error || 'Invalid email or password');
         return;
       }
-      onLoggedIn({ name: data.name!, email: data.email!, companyName: data.companyName ?? '', enabledBrands: data.enabledBrands ?? [] });
+      onLoggedIn({
+        name: data.name!,
+        email: data.email!,
+        companyName: data.companyName ?? '',
+        enabledBrands: data.enabledBrands ?? [],
+        appleShowPrices: data.appleShowPrices ?? true,
+        pricedVendorBrands: data.pricedVendorBrands ?? [],
+      });
       setPassword('');
     } finally {
       setBusy(false);
