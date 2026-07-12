@@ -113,6 +113,9 @@ export interface VendorPricedItem {
  * categories. A brand only comes out of this when it has a markup entry; unmatched brands stay
  * availability-only via /api/customer/catalog instead. There's no numeric stock count on this feed
  * (only a yes/on-demand/limited status), so availability replaces the Stock column Apple has.
+ * Markup is applied on top of myPrice (the admin's own cost, shown as "Cost (USD)" in the admin
+ * Vendor Catalog table), not retailPrice — retailPrice is IT4Profit's own suggested price and never
+ * feeds into what the customer sees.
  */
 export async function getVendorPricedItemsForCustomer(
   customer: Pick<Customer, 'enabledBrands' | 'vendorMarkups'>
@@ -131,14 +134,14 @@ export async function getVendorPricedItemsForCustomer(
     if (!markup) continue;
     const availLabel = CUSTOMER_AVAIL_LABEL[item.avail];
     if (!availLabel) continue;
-    if (item.retailPrice === null) continue;
+    if (item.myPrice === null) continue;
     results.push({
       partNumber: item.wic,
       description: item.description,
       category: item.group,
       vendor: item.vendor,
       availability: availLabel,
-      price: applyMarkup(item.retailPrice, markup),
+      price: applyMarkup(item.myPrice, markup),
     });
   }
   return results;
