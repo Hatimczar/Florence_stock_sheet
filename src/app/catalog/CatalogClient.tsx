@@ -4,9 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { CatalogItem } from '@/lib/catalog';
 import { fetchAdminCatalog, syncCatalogApi } from '@/lib/catalogApi';
+import { guessStockColumn, ParsedFile } from '@/lib/parseFile';
+import { mergeStockAndPrice, ListMapping } from '@/lib/merge';
+import { fetchList, uploadList, updateListMapping, clearList, updateStockItem, StoredList } from '@/lib/api';
 import { AdminGate } from '@/components/AdminGate';
 import { AdminShell } from '@/components/AdminShell';
 import { ProductThumb } from '@/components/ProductThumb';
+import { UploadCard } from '@/components/UploadCard';
+import { MergedTable } from '@/components/MergedTable';
 
 const AVAIL_LABEL: Record<string, string> = { yes: 'Available', 'on demand': 'On Demand', limited: 'Limited' };
 const AVAIL_CLASS: Record<string, string> = { yes: 'pill-green', 'on demand': 'pill-orange', limited: 'pill-red' };
@@ -27,6 +32,7 @@ function CatalogContent() {
   const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [availFilter, setAvailFilter] = useState('all');
+  const [oaStock, setOaStock] = useState<StoredList | null>(null);
 
   const load = async () => {
     const data = await fetchAdminCatalog();
@@ -35,7 +41,7 @@ function CatalogContent() {
   };
 
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    Promise.all([load(), fetchList('stock-origin-acoustics').then(setOaStock)]).finally(() => setLoading(false));
   }, []);
 
   const handleSync = async () => {
@@ -69,6 +75,27 @@ function CatalogContent() {
     return c;
   }, [filtered]);
 
+  const oaMergeResult = useMemo(() => {
+    if (!oaStock) {
+      return { rows: [], totalMatched: 0, totalMissingStock: 0, totalMissingPrice: 0, duplicatePartNumbers: [] };
+    }
+    return mergeStockAndPrice(oaStock.file.rows, oaStock.mapping, [], oaStock.mapping);
+  }, [oaStock]);
+
+  const handleOaStockParsed = async (file: ParsedFile, mapping: ListMapping) => {
+    setOaStock(await uploadList('stock-origin-acoustics', file, mapping));
+  };
+  const handleOaStockMappingChange = async (mapping: Partial<ListMapping>) => {
+    setOaStock(await updateListMapping('stock-origin-acoustics', mapping));
+  };
+  const handleClearOaStock = async () => {
+    await clearList('stock-origin-acoustics');
+    setOaStock(null);
+  };
+  const handleUpdateOaStock = async (partNumber: string, newStock: number) => {
+    setOaStock(await updateStockItem(partNumber, newStock, 'stock-origin-acoustics'));
+  };
+
   return (
     <AdminShell
       active="catalog"
@@ -80,6 +107,22 @@ function CatalogContent() {
         </button>
       }
     >
+      <div className="section-header">Origin Acoustics · Stock Only (No Pricing)</div>
+      <UploadCard
+        step="①"
+        title="Stock List"
+        valueLabel="Stock Quantity"
+        valueGuess={guessStockColumn}
+        listState={oaStock}
+        onFileParsed={handleOaStockParsed}
+        onMappingChange={handleOaStockMappingChange}
+        onClear={handleClearOaStock}
+      />
+      <MergedTable result={oaMergeResult} onUpdateStock={handleUpdateOaStock} hasPricing={false} step="②" />
+
+      <div className="section-header" style={{ marginTop: 32 }}>
+        IT4Profit Vendor Feed
+      </div>
       <p style={{ marginBottom: 16, fontSize: 12, color: 'var(--muted)' }}>
         {syncedAt ? `Synced from IT4Profit ${new Date(syncedAt).toLocaleString()}` : 'Not synced yet'}
       </p>
