@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentCustomer } from '@/lib/session';
-import { getCatalog, CUSTOMER_AVAIL_LABEL, MANUAL_STOCK_VENDOR } from '@/lib/catalog';
-import { getManualStockCatalogItems } from '@/lib/customerPricing';
+import { getCatalog, CUSTOMER_AVAIL_LABEL, MANUAL_STOCK_VENDOR, ORIGIN_ACOUSTICS_VENDOR } from '@/lib/catalog';
+import { getManualStockCatalogItems, getOriginAcousticsCatalogItems } from '@/lib/customerPricing';
 import { CustomerCatalogItem } from '@/lib/catalogApi';
 
 export const dynamic = 'force-dynamic';
@@ -23,6 +23,14 @@ export async function GET(req: NextRequest) {
     const manualItems = await getManualStockCatalogItems();
     for (const item of manualItems) {
       items.push({ wic: item.wic, description: item.description, vendor: MANUAL_STOCK_VENDOR, group: item.group, availability: item.availability, image: '' });
+    }
+  }
+
+  // Origin Acoustics never has pricing, so it's always availability-only, same as any unpriced vendor brand.
+  if (enabled.has(ORIGIN_ACOUSTICS_VENDOR)) {
+    const oaItems = await getOriginAcousticsCatalogItems();
+    for (const item of oaItems) {
+      items.push({ wic: item.wic, description: item.description, vendor: ORIGIN_ACOUSTICS_VENDOR, group: item.group, availability: item.availability, image: '' });
     }
   }
 

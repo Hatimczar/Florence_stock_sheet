@@ -98,6 +98,27 @@ export async function getManualStockCatalogItems(): Promise<ManualStockCatalogIt
     }));
 }
 
+/**
+ * Origin Acoustics' manually-uploaded Stock List, reshaped the same way as the manual Apple sheet —
+ * but this brand never has a price file at all, so it's always availability-only (no per-customer
+ * pricing toggle needed, unlike Apple).
+ */
+export async function getOriginAcousticsCatalogItems(): Promise<ManualStockCatalogItem[]> {
+  const stock = await getStoredList('stock_origin_acoustics');
+  if (!stock) return [];
+
+  const merged = mergeStockAndPrice(stock.file.rows, stock.mapping, [], stock.mapping);
+
+  return merged.rows
+    .filter((row) => row.stock !== null && row.stock > 0)
+    .map((row) => ({
+      wic: row.partNumber,
+      description: row.description,
+      group: row.category,
+      availability: 'Available' as const,
+    }));
+}
+
 export interface VendorPricedItem {
   partNumber: string;
   description: string;
@@ -114,7 +135,7 @@ export interface VendorPricedItem {
  * availability-only via /api/customer/catalog instead. There's no numeric stock count on this feed
  * (only a yes/on-demand/limited status), so availability replaces the Stock column Apple has.
  * Markup is applied on top of myPrice (the admin's own cost, shown as "Cost (USD)" in the admin
- * Vendor Catalog table), not retailPrice — retailPrice is IT4Profit's own suggested price and never
+ * Asbis Brands table), not retailPrice — retailPrice is IT4Profit's own suggested price and never
  * feeds into what the customer sees.
  */
 export async function getVendorPricedItemsForCustomer(

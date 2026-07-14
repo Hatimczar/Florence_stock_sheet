@@ -7,7 +7,7 @@ export interface StoredList {
   uploadedAt: string;
 }
 
-export type ListKind = 'stock' | 'price';
+export type ListKind = 'stock' | 'price' | 'stock-origin-acoustics';
 
 export async function fetchList(kind: ListKind): Promise<StoredList | null> {
   const res = await fetch(`/api/${kind}`, { cache: 'no-store' });
@@ -43,11 +43,15 @@ export async function clearList(kind: ListKind): Promise<void> {
   if (!res.ok) throw new Error(`Failed to clear ${kind} list`);
 }
 
-export async function updateStockItem(partNumber: string, newStock: number): Promise<StoredList> {
+export async function updateStockItem(
+  partNumber: string,
+  newStock: number,
+  kind: Extract<ListKind, 'stock' | 'stock-origin-acoustics'> = 'stock'
+): Promise<StoredList> {
   const res = await fetch('/api/admin/stock-item', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ partNumber, newStock }),
+    body: JSON.stringify({ partNumber, newStock, kind: kind === 'stock-origin-acoustics' ? 'stock_origin_acoustics' : 'stock' }),
   });
   const data = (await res.json()) as { list?: StoredList; error?: string };
   if (!res.ok || !data.list) throw new Error(data.error || 'Failed to update stock');

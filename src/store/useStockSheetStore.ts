@@ -4,17 +4,21 @@ import { StoredList } from '@/lib/api';
 interface StockSheetStoreState {
   stock: StoredList | null;
   price: StoredList | null;
+  originAcousticsStock: StoredList | null;
   lastSyncedAt: string | null;
   setStock: (list: StoredList | null) => void;
   setPrice: (list: StoredList | null) => void;
+  setOriginAcousticsStock: (list: StoredList | null) => void;
   setLastSyncedAt: (iso: string) => void;
 }
 
 export const useStockSheetStore = create<StockSheetStoreState>()((set) => ({
   stock: null,
   price: null,
+  originAcousticsStock: null,
   lastSyncedAt: null,
   setStock: (list) => set({ stock: list }),
   setPrice: (list) => set({ price: list }),
+  setOriginAcousticsStock: (list) => set({ originAcousticsStock: list }),
   setLastSyncedAt: (iso) => set({ lastSyncedAt: iso }),
 }));

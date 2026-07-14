@@ -10,9 +10,15 @@ type SortKey = 'fileOrder' | 'partNumber' | 'stock' | 'price';
 export function MergedTable({
   result,
   onUpdateStock,
+  hasPricing = true,
+  step = '③',
 }: {
   result: MergeResult;
   onUpdateStock?: (partNumber: string, newStock: number) => Promise<void>;
+  /** Set false for a stock-only brand with no price file — hides the Price column/stat and treats "missing price" as normal. */
+  hasPricing?: boolean;
+  /** Step marker shown before "Merged View" — defaults to ③ to match the two-upload Apple flow. */
+  step?: string;
 }) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('fileOrder');
@@ -50,8 +56,9 @@ export function MergedTable({
   };
 
   const statusBadge = (row: MergedRow) => {
-    if (row.status === 'matched') return <span className="pill pill-green">Matched</span>;
     if (row.status === 'missing-stock') return <span className="pill pill-orange">No Stock Data</span>;
+    if (!hasPricing) return <span className="pill pill-green">In Stock</span>;
+    if (row.status === 'matched') return <span className="pill pill-green">Matched</span>;
     return <span className="pill pill-orange">No Price Data</span>;
   };
 
@@ -87,7 +94,7 @@ export function MergedTable({
   return (
     <div>
       <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <span>③ Merged View · {result.rows.length} Unique Part Numbers</span>
+        <span>{step} Merged View · {result.rows.length} Unique Part Numbers</span>
         <button
           onClick={() => downloadMergedCSV(`florence-stock-sheet-${new Date().toISOString().slice(0, 10)}.csv`, result.rows)}
           disabled={result.rows.length === 0}
@@ -104,17 +111,21 @@ export function MergedTable({
           <div className="v">{result.rows.length}</div>
         </div>
         <div className="stat tone-green">
-          <div className="k">Matched</div>
-          <div className="v">{result.totalMatched}</div>
+          <div className="k">{hasPricing ? 'Matched' : 'In Stock'}</div>
+          <div className="v">
+            {hasPricing ? result.totalMatched : result.rows.filter((r) => r.stock !== null && r.stock > 0).length}
+          </div>
         </div>
         <div className="stat tone-orange">
           <div className="k">Missing Stock</div>
           <div className="v">{result.totalMissingStock}</div>
         </div>
-        <div className="stat tone-orange">
-          <div className="k">Missing Price</div>
-          <div className="v">{result.totalMissingPrice}</div>
-        </div>
+        {hasPricing && (
+          <div className="stat tone-orange">
+            <div className="k">Missing Price</div>
+            <div className="v">{result.totalMissingPrice}</div>
+          </div>
+        )}
       </div>
 
       {result.duplicatePartNumbers.length > 0 && (
@@ -157,17 +168,23 @@ export function MergedTable({
                 <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('stock')}>
                   Stock {sortKey === 'stock' && (sortDir === 'asc' ? '▲' : '▼')}
                 </th>
-                <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('price')}>
-                  Price {sortKey === 'price' && (sortDir === 'asc' ? '▲' : '▼')}
-                </th>
+                {hasPricing && (
+                  <th className="num" style={{ cursor: 'pointer' }} onClick={() => toggleSort('price')}>
+                    Price {sortKey === 'price' && (sortDir === 'asc' ? '▲' : '▼')}
+                  </th>
+                )}
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
-                    {result.rows.length === 0 ? 'Upload both lists to see the merged view.' : 'No matches for this search.'}
+                  <td colSpan={hasPricing ? 6 : 5} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                    {result.rows.length === 0
+                      ? hasPricing
+                        ? 'Upload both lists to see the merged view.'
+                        : 'Upload the stock list to see it here.'
+                      : 'No matches for this search.'}
                   </td>
                 </tr>
               ) : (
@@ -221,7 +238,7 @@ export function MergedTable({
                         </span>
                       )}
                     </td>
-                    <td className="num mono price-cell">{row.price === null ? '—' : row.price.toFixed(2)}</td>
+                    {hasPricing && <td className="num mono price-cell">{row.price === null ? '—' : row.price.toFixed(2)}</td>}
                     <td>{statusBadge(row)}</td>
                   </tr>
                 ))

@@ -8,7 +8,7 @@ export interface StoredList {
   uploadedAt: string;
 }
 
-export type ListKind = 'stock' | 'price';
+export type ListKind = 'stock' | 'price' | 'stock_origin_acoustics';
 
 export async function getStoredList(kind: ListKind): Promise<StoredList | null> {
   const { env } = await getCloudflareContext({ async: true });
@@ -51,8 +51,12 @@ function parseRowNumber(raw: string | number | undefined): number {
  * is applied to the first matching row so the aggregated total lands on
  * `newValue`, rather than guessing how to split it across rows.
  */
-export async function updateStockItemValue(partNumber: string, newValue: number): Promise<StoredList | null> {
-  const existing = await getStoredList('stock');
+export async function updateStockItemValue(
+  partNumber: string,
+  newValue: number,
+  kind: Extract<ListKind, 'stock' | 'stock_origin_acoustics'> = 'stock'
+): Promise<StoredList | null> {
+  const existing = await getStoredList(kind);
   if (!existing) return null;
 
   const target = normalizePartNumber(partNumber);
@@ -78,6 +82,6 @@ export async function updateStockItemValue(partNumber: string, newValue: number)
 
   const updated: StoredList = { ...existing, file: { ...existing.file, rows }, uploadedAt: new Date().toISOString() };
   const { env } = await getCloudflareContext({ async: true });
-  await env.STOCK_SHEET_KV.put('stock', JSON.stringify(updated));
+  await env.STOCK_SHEET_KV.put(kind, JSON.stringify(updated));
   return updated;
 }

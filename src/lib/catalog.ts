@@ -22,6 +22,9 @@ const CATALOG_KEY = 'it4profit_catalog';
 /** The manually-uploaded Stock/Price sheet (admin's own inventory) is exposed to customers as this brand. */
 export const MANUAL_STOCK_VENDOR = 'Apple';
 
+/** A second manually-uploaded stock sheet (no price file — this brand is always availability-only). */
+export const ORIGIN_ACOUSTICS_VENDOR = 'Origin Acoustics';
+
 // Availability values the customer portal is allowed to surface; 'no' (and anything unrecognized) is never shown.
 export const CUSTOMER_AVAIL_LABEL: Record<string, string> = {
   yes: 'Available',

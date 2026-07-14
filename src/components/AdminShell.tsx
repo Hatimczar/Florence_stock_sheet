@@ -11,7 +11,7 @@ type AdminNavKey = 'stock' | 'catalog' | 'customers';
 
 const NAV_ITEMS: { key: AdminNavKey; href: string; label: string; icon: typeof Package }[] = [
   { key: 'stock', href: '/', label: 'Stock Sheet', icon: Package },
-  { key: 'catalog', href: '/catalog', label: 'Vendor Catalog', icon: PackageSearch },
+  { key: 'catalog', href: '/catalog', label: 'Asbis Brands', icon: PackageSearch },
   { key: 'customers', href: '/customers', label: 'Customers', icon: Users },
 ];
 

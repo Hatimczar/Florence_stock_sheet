@@ -22,16 +22,30 @@ export default function HomeClient() {
 }
 
 function HomeContent() {
-  const { stock, price, setStock, setPrice, lastSyncedAt, setLastSyncedAt } = useStockSheetStore();
+  const {
+    stock,
+    price,
+    originAcousticsStock,
+    setStock,
+    setPrice,
+    setOriginAcousticsStock,
+    lastSyncedAt,
+    setLastSyncedAt,
+  } = useStockSheetStore();
   const [loading, setLoading] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sync = useCallback(async () => {
-    const [stockList, priceList] = await Promise.all([fetchList('stock'), fetchList('price')]);
+    const [stockList, priceList, oaStockList] = await Promise.all([
+      fetchList('stock'),
+      fetchList('price'),
+      fetchList('stock-origin-acoustics'),
+    ]);
     setStock(stockList);
     setPrice(priceList);
+    setOriginAcousticsStock(oaStockList);
     setLastSyncedAt(new Date().toISOString());
-  }, [setStock, setPrice, setLastSyncedAt]);
+  }, [setStock, setPrice, setOriginAcousticsStock, setLastSyncedAt]);
 
   useEffect(() => {
     sync().finally(() => setLoading(false));
@@ -47,6 +61,13 @@ function HomeContent() {
     }
     return mergeStockAndPrice(stock.file.rows, stock.mapping, price.file.rows, price.mapping);
   }, [stock, price]);
+
+  const oaMergeResult = useMemo(() => {
+    if (!originAcousticsStock) {
+      return { rows: [], totalMatched: 0, totalMissingStock: 0, totalMissingPrice: 0, duplicatePartNumbers: [] };
+    }
+    return mergeStockAndPrice(originAcousticsStock.file.rows, originAcousticsStock.mapping, [], originAcousticsStock.mapping);
+  }, [originAcousticsStock]);
 
   const handleStockParsed = async (file: ParsedFile, mapping: ListMapping) => {
     const stored = await uploadList('stock', file, mapping);
@@ -80,6 +101,23 @@ function HomeContent() {
   const handleUpdateStock = async (partNumber: string, newStock: number) => {
     const stored = await updateStockItem(partNumber, newStock);
     setStock(stored);
+  };
+
+  const handleOaStockParsed = async (file: ParsedFile, mapping: ListMapping) => {
+    const stored = await uploadList('stock-origin-acoustics', file, mapping);
+    setOriginAcousticsStock(stored);
+  };
+  const handleOaStockMappingChange = async (mapping: Partial<ListMapping>) => {
+    const stored = await updateListMapping('stock-origin-acoustics', mapping);
+    setOriginAcousticsStock(stored);
+  };
+  const handleClearOaStock = async () => {
+    await clearList('stock-origin-acoustics');
+    setOriginAcousticsStock(null);
+  };
+  const handleUpdateOaStock = async (partNumber: string, newStock: number) => {
+    const stored = await updateStockItem(partNumber, newStock, 'stock-origin-acoustics');
+    setOriginAcousticsStock(stored);
   };
 
   return (
@@ -130,6 +168,22 @@ function HomeContent() {
           />
 
           <MergedTable result={mergeResult} onUpdateStock={handleUpdateStock} />
+
+          <div className="section-header" style={{ marginTop: 32 }}>
+            Origin Acoustics · Stock Only (No Pricing)
+          </div>
+          <UploadCard
+            step="①"
+            title="Stock List"
+            valueLabel="Stock Quantity"
+            valueGuess={guessStockColumn}
+            listState={originAcousticsStock}
+            onFileParsed={handleOaStockParsed}
+            onMappingChange={handleOaStockMappingChange}
+            onClear={handleClearOaStock}
+          />
+
+          <MergedTable result={oaMergeResult} onUpdateStock={handleUpdateOaStock} hasPricing={false} step="②" />
         </>
       )}
 

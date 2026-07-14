@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, UserPlus, Tag } from 'lucide-react';
 import { PublicCustomer, CategoryMarkup, VendorMarkup } from '@/lib/customers';
 import { fetchCustomers, createCustomerApi, fetchCategories, fetchCatalogVendors } from '@/lib/customerApi';
-import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
+import { MANUAL_STOCK_VENDOR, ORIGIN_ACOUSTICS_VENDOR } from '@/lib/catalog';
+
+// Apple has its own separate pricing scheme (categoryMarkups); Origin Acoustics never has pricing at all.
+// Neither belongs in the vendor-markup editor, which is for IT4Profit-catalog brands only.
+const VENDOR_MARKUP_EXCLUDED_BRANDS = new Set([MANUAL_STOCK_VENDOR, ORIGIN_ACOUSTICS_VENDOR]);
 import { CustomerRow } from '@/components/CustomerRow';
 import { PendingCustomerRow } from '@/components/PendingCustomerRow';
 import { CategoryMarkupEditor } from '@/components/CategoryMarkupEditor';
@@ -162,11 +166,11 @@ function CustomersContent() {
         </button>
       )}
 
-      {enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR).length > 0 && (
+      {enabledBrands.filter((b) => !VENDOR_MARKUP_EXCLUDED_BRANDS.has(b)).length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div className="perm-label">Vendor brand pricing — brands this customer can see, with their own markup</div>
           <VendorMarkupEditor
-            vendors={enabledBrands.filter((b) => b !== MANUAL_STOCK_VENDOR)}
+            vendors={enabledBrands.filter((b) => !VENDOR_MARKUP_EXCLUDED_BRANDS.has(b))}
             value={vendorMarkups}
             onChange={setVendorMarkups}
           />

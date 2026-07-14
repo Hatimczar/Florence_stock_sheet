@@ -72,7 +72,7 @@ function CatalogContent() {
   return (
     <AdminShell
       active="catalog"
-      title="Vendor Catalog"
+      title="Asbis Brands"
       toolbarActions={
         <button onClick={handleSync} disabled={syncing} className="toolbar-btn primary">
           <RefreshCw style={syncing ? { animation: 'spin 1s linear infinite' } : undefined} />
@@ -99,7 +99,7 @@ function CatalogContent() {
         </div>
       ) : (
         <>
-          <div className="section-header">Merged Vendor Catalog · WIC, description, brand, category, both prices, availability</div>
+          <div className="section-header">Merged Asbis Brands Catalog · WIC, description, brand, category, both prices, availability</div>
 
           <div className="filter-bar">
             <select className="filter-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
