@@ -38,6 +38,8 @@ interface StockToast {
 const WHATSAPP_NUMBER = '971525348090';
 const STOCK_POLL_INTERVAL_MS = 15_000;
 const TOAST_LIFETIME_MS = 6_000;
+const SPOTLIGHT_MIN_INTERVAL_MS = 7_000;
+const SPOTLIGHT_MAX_INTERVAL_MS = 16_000;
 
 const AVAIL_CLASS: Record<string, string> = {
   Available: 'avail-yes',
@@ -158,6 +160,47 @@ export default function PortalClient() {
       loadPriced(true);
     }, STOCK_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer]);
+
+  // Spotlight ticker — surfaces a random real item from whatever brands this customer can see, on a
+  // short randomized interval, purely to keep the portal feeling alive. Not tied to actual stock
+  // changes (that's the toast logic above); always shows genuine current data, never fabricated.
+  const catalogItemsRef = useRef<CustomerCatalogItem[]>([]);
+  const pricedItemsRef = useRef<PricedItem[]>([]);
+  useEffect(() => {
+    catalogItemsRef.current = catalogItems;
+  }, [catalogItems]);
+  useEffect(() => {
+    pricedItemsRef.current = pricedItems;
+  }, [pricedItems]);
+
+  useEffect(() => {
+    if (!customer) return;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const spotlightOne = () => {
+      const pool: string[] = [
+        ...catalogItemsRef.current.map((i) => `${i.description || i.wic} — ${i.availability}`),
+        ...pricedItemsRef.current.map(
+          (i) => `${i.description || i.partNumber} — ${i.vendor === MANUAL_STOCK_VENDOR ? 'AED' : 'USD'} ${i.price.toFixed(2)}`
+        ),
+      ];
+      if (pool.length > 0) {
+        pushToast(pool[Math.floor(Math.random() * pool.length)]);
+      }
+    };
+
+    const scheduleNext = () => {
+      const delay = SPOTLIGHT_MIN_INTERVAL_MS + Math.random() * (SPOTLIGHT_MAX_INTERVAL_MS - SPOTLIGHT_MIN_INTERVAL_MS);
+      timeoutId = setTimeout(() => {
+        spotlightOne();
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer]);
 
