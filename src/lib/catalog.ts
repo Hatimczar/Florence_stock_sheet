@@ -41,11 +41,29 @@ async function getKv() {
   return env.STOCK_SHEET_KV;
 }
 
+/**
+ * In-isolate cache for the parsed catalog. The IT4Profit feed is thousands of items (multi-MB as
+ * JSON) and only changes when an admin manually syncs, but customer portals poll pricing endpoints
+ * that read it every ~15s — re-fetching and JSON.parsing that blob on every poll was blowing past
+ * the Worker's per-request CPU time limit for customers with many priced brands. A short TTL keeps
+ * pricing responsive to a fresh sync without paying that cost on every single request.
+ */
+let cachedCatalog: { data: StoredCatalog; expiresAt: number } | null = null;
+const CATALOG_CACHE_TTL_MS = 30_000;
+
 export async function getCatalog(): Promise<StoredCatalog | null> {
+  const now = Date.now();
+  if (cachedCatalog && cachedCatalog.expiresAt > now) return cachedCatalog.data;
+
   const kv = await getKv();
   const raw = await kv.get(CATALOG_KEY);
-  if (!raw) return null;
-  return JSON.parse(raw) as StoredCatalog;
+  if (!raw) {
+    cachedCatalog = null;
+    return null;
+  }
+  const parsed = JSON.parse(raw) as StoredCatalog;
+  cachedCatalog = { data: parsed, expiresAt: now + CATALOG_CACHE_TTL_MS };
+  return parsed;
 }
 
 function decodeXmlEntities(s: string): string {
@@ -104,6 +122,7 @@ export async function syncCatalogFromIt4Profit(): Promise<StoredCatalog> {
   const stored: StoredCatalog = { items, syncedAt: new Date().toISOString() };
   const kv = await getKv();
   await kv.put(CATALOG_KEY, JSON.stringify(stored));
+  cachedCatalog = { data: stored, expiresAt: Date.now() + CATALOG_CACHE_TTL_MS };
   return stored;
 }
 
