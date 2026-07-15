@@ -163,9 +163,10 @@ export default function PortalClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer]);
 
-  // Spotlight ticker — surfaces a random real item from whatever brands this customer can see, on a
-  // short randomized interval, purely to keep the portal feeling alive. Not tied to actual stock
-  // changes (that's the toast logic above); always shows genuine current data, never fabricated.
+  // Spotlight ticker — picks a random real item name from whatever brands this customer can see, on a
+  // short randomized interval, and shows a "Sold X Units" marketing toast. The sold count is a
+  // fabricated random number (1-20, occasionally 100-200) purely for engagement — it is NOT tied to
+  // actual sales or stock changes (that's the real toast logic above).
   const catalogItemsRef = useRef<CustomerCatalogItem[]>([]);
   const pricedItemsRef = useRef<PricedItem[]>([]);
   useEffect(() => {
@@ -180,18 +181,19 @@ export default function PortalClient() {
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const truncate = (text: string, max = 32) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+    const randomInt = (min: number, max: number) => Math.floor(min + Math.random() * (max - min + 1));
+    // Mostly a small 1-20 count, occasionally jumping to a 100-200 "big sale" number for variety.
+    const randomSoldCount = () => (Math.random() < 0.15 ? randomInt(100, 200) : randomInt(1, 20));
 
     const spotlightOne = () => {
-      const pool: string[] = [
-        ...catalogItemsRef.current.map((i) => `${truncate(i.description || i.wic)} — ${i.availability}`),
-        ...pricedItemsRef.current.map((i) =>
-          typeof i.stock === 'number'
-            ? `${truncate(i.description || i.partNumber)} — In Stock`
-            : `${truncate(i.description || i.partNumber)} — ${i.availability}`
-        ),
+      const names: string[] = [
+        ...catalogItemsRef.current.map((i) => i.description || i.wic),
+        ...pricedItemsRef.current.map((i) => i.description || i.partNumber),
       ];
-      if (pool.length > 0) {
-        pushToast(pool[Math.floor(Math.random() * pool.length)]);
+      if (names.length > 0) {
+        const name = names[Math.floor(Math.random() * names.length)];
+        const count = randomSoldCount();
+        pushToast(`${truncate(name)} — Sold ${count} ${count === 1 ? 'Unit' : 'Units'}`);
       }
     };
 
