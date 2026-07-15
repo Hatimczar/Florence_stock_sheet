@@ -7,7 +7,7 @@ export interface StoredList {
   uploadedAt: string;
 }
 
-export type ListKind = 'stock' | 'price' | 'stock-origin-acoustics';
+export type ListKind = 'stock' | 'price' | 'stock-origin-acoustics' | 'price-origin-acoustics';
 
 export async function fetchList(kind: ListKind): Promise<StoredList | null> {
   const res = await fetch(`/api/${kind}`, { cache: 'no-store' });

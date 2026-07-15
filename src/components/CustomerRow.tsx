@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { Pencil, Trash2, Check, X, Tag } from 'lucide-react';
 import { PublicCustomer, CategoryMarkup, VendorMarkup } from '@/lib/customers';
 import { updateCustomerApi, deleteCustomerApi } from '@/lib/customerApi';
-import { MANUAL_STOCK_VENDOR, ORIGIN_ACOUSTICS_VENDOR } from '@/lib/catalog';
+import { MANUAL_STOCK_VENDOR } from '@/lib/catalog';
 
-// Apple has its own separate pricing scheme (categoryMarkups); Origin Acoustics never has pricing at all.
-// Neither belongs in the vendor-markup editor, which is for IT4Profit-catalog brands only.
-const VENDOR_MARKUP_EXCLUDED_BRANDS = new Set([MANUAL_STOCK_VENDOR, ORIGIN_ACOUSTICS_VENDOR]);
+// Apple has its own separate pricing scheme (categoryMarkups), so it doesn't belong in the
+// vendor-markup editor — everything else (IT4Profit brands, Origin Acoustics) does.
+const VENDOR_MARKUP_EXCLUDED_BRANDS = new Set([MANUAL_STOCK_VENDOR]);
 import { CategoryMarkupEditor } from './CategoryMarkupEditor';
 import { VendorMarkupEditor } from './VendorMarkupEditor';
 import { BrandAccessEditor } from './BrandAccessEditor';

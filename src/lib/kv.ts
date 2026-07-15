@@ -8,7 +8,7 @@ export interface StoredList {
   uploadedAt: string;
 }
 
-export type ListKind = 'stock' | 'price' | 'stock_origin_acoustics';
+export type ListKind = 'stock' | 'price' | 'stock_origin_acoustics' | 'price_origin_acoustics';
 
 export async function getStoredList(kind: ListKind): Promise<StoredList | null> {
   const { env } = await getCloudflareContext({ async: true });

@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   const enabled = new Set(customer.enabledBrands);
 
   const items: CustomerCatalogItem[] = [];
+  const pricedVendors = new Set(customer.vendorMarkups.map((m) => m.vendor));
 
   // Apple only shows up here (availability-only, no price) when the admin has turned its pricing off for this
   // customer. Otherwise it's served priced via /api/customer/browse instead.
@@ -26,15 +27,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Origin Acoustics never has pricing, so it's always availability-only, same as any unpriced vendor brand.
-  if (enabled.has(ORIGIN_ACOUSTICS_VENDOR)) {
+  // Origin Acoustics only shows up here (availability-only) when it has no vendorMarkup for this customer.
+  // Otherwise it's served priced via /api/customer/browse instead.
+  if (enabled.has(ORIGIN_ACOUSTICS_VENDOR) && !pricedVendors.has(ORIGIN_ACOUSTICS_VENDOR)) {
     const oaItems = await getOriginAcousticsCatalogItems();
     for (const item of oaItems) {
       items.push({ wic: item.wic, description: item.description, vendor: ORIGIN_ACOUSTICS_VENDOR, group: item.group, availability: item.availability, image: '' });
     }
   }
-
-  const pricedVendors = new Set(customer.vendorMarkups.map((m) => m.vendor));
 
   const catalog = await getCatalog();
   if (catalog) {

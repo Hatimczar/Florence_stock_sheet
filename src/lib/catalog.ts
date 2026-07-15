@@ -22,7 +22,11 @@ const CATALOG_KEY = 'it4profit_catalog';
 /** The manually-uploaded Stock/Price sheet (admin's own inventory) is exposed to customers as this brand. */
 export const MANUAL_STOCK_VENDOR = 'Apple';
 
-/** A second manually-uploaded stock sheet (no price file — this brand is always availability-only). */
+/**
+ * A second manually-uploaded stock sheet, managed from the Asbis Brands page rather than the Stock
+ * Sheet page. Priced per-customer via vendorMarkups, same as any IT4Profit vendor brand — see
+ * getVendorPricedItemsForCustomer.
+ */
 export const ORIGIN_ACOUSTICS_VENDOR = 'Origin Acoustics';
 
 // Availability values the customer portal is allowed to surface; 'no' (and anything unrecognized) is never shown.

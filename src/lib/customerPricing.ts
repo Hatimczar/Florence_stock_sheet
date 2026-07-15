@@ -1,8 +1,8 @@
 import { getStoredList } from './kv';
 import { mergeStockAndPrice } from './merge';
 import { normalizePartNumber } from './parseFile';
-import { Customer, CategoryMarkup } from './customers';
-import { getCatalog, CUSTOMER_AVAIL_LABEL } from './catalog';
+import { Customer, CategoryMarkup, VendorMarkup } from './customers';
+import { getCatalog, CUSTOMER_AVAIL_LABEL, ORIGIN_ACOUSTICS_VENDOR } from './catalog';
 
 export interface CustomerLookupResult {
   partNumber: string;
@@ -99,9 +99,9 @@ export async function getManualStockCatalogItems(): Promise<ManualStockCatalogIt
 }
 
 /**
- * Origin Acoustics' manually-uploaded Stock List, reshaped the same way as the manual Apple sheet —
- * but this brand never has a price file at all, so it's always availability-only (no per-customer
- * pricing toggle needed, unlike Apple).
+ * Origin Acoustics' manually-uploaded Stock List, reshaped the same way as the manual Apple sheet.
+ * This is the availability-only fallback — used when a customer has the brand enabled but no
+ * vendorMarkup entry for it (see getVendorPricedItemsForCustomer for the priced path).
  */
 export async function getOriginAcousticsCatalogItems(): Promise<ManualStockCatalogItem[]> {
   const stock = await getStoredList('stock_origin_acoustics');
@@ -138,13 +138,10 @@ export interface VendorPricedItem {
  * Asbis Brands table), not retailPrice — retailPrice is IT4Profit's own suggested price and never
  * feeds into what the customer sees.
  */
-export async function getVendorPricedItemsForCustomer(
-  customer: Pick<Customer, 'enabledBrands' | 'vendorMarkups'>
+async function getIt4ProfitPricedItems(
+  enabled: Set<string>,
+  markupByVendor: Map<string, VendorMarkup>
 ): Promise<VendorPricedItem[]> {
-  if (customer.vendorMarkups.length === 0) return [];
-  const enabled = new Set(customer.enabledBrands);
-  const markupByVendor = new Map(customer.vendorMarkups.map((m) => [m.vendor, m]));
-
   const catalog = await getCatalog();
   if (!catalog) return [];
 
@@ -166,4 +163,51 @@ export async function getVendorPricedItemsForCustomer(
     });
   }
   return results;
+}
+
+/**
+ * Origin Acoustics priced the same way as any IT4Profit vendor brand (per-customer vendorMarkup on
+ * top of its own manually-uploaded cost), even though it isn't part of the IT4Profit feed. Since its
+ * stock list is a raw quantity (not a yes/on-demand/limited status), it's reduced to "Available" when
+ * in stock — same convention as its own availability-only fallback in getOriginAcousticsCatalogItems.
+ */
+async function getOriginAcousticsPricedItems(
+  enabled: Set<string>,
+  markupByVendor: Map<string, VendorMarkup>
+): Promise<VendorPricedItem[]> {
+  if (!enabled.has(ORIGIN_ACOUSTICS_VENDOR)) return [];
+  const markup = markupByVendor.get(ORIGIN_ACOUSTICS_VENDOR);
+  if (!markup) return [];
+
+  const [stock, price] = await Promise.all([getStoredList('stock_origin_acoustics'), getStoredList('price_origin_acoustics')]);
+  if (!stock || !price) return [];
+
+  const merged = mergeStockAndPrice(stock.file.rows, stock.mapping, price.file.rows, price.mapping);
+  const results: VendorPricedItem[] = [];
+  for (const row of merged.rows) {
+    if (row.stock === null || row.stock <= 0 || row.price === null) continue;
+    results.push({
+      partNumber: row.partNumber,
+      description: row.description,
+      category: row.category,
+      vendor: ORIGIN_ACOUSTICS_VENDOR,
+      availability: 'Available',
+      price: applyMarkup(row.price, markup),
+    });
+  }
+  return results;
+}
+
+export async function getVendorPricedItemsForCustomer(
+  customer: Pick<Customer, 'enabledBrands' | 'vendorMarkups'>
+): Promise<VendorPricedItem[]> {
+  if (customer.vendorMarkups.length === 0) return [];
+  const enabled = new Set(customer.enabledBrands);
+  const markupByVendor = new Map(customer.vendorMarkups.map((m) => [m.vendor, m]));
+
+  const [it4profitItems, originAcousticsItems] = await Promise.all([
+    getIt4ProfitPricedItems(enabled, markupByVendor),
+    getOriginAcousticsPricedItems(enabled, markupByVendor),
+  ]);
+  return [...it4profitItems, ...originAcousticsItems];
 }
