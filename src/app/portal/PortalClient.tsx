@@ -179,11 +179,15 @@ export default function PortalClient() {
     if (!customer) return;
     let timeoutId: ReturnType<typeof setTimeout>;
 
+    const truncate = (text: string, max = 32) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+
     const spotlightOne = () => {
       const pool: string[] = [
-        ...catalogItemsRef.current.map((i) => `${i.description || i.wic} — ${i.availability}`),
-        ...pricedItemsRef.current.map(
-          (i) => `${i.description || i.partNumber} — ${i.vendor === MANUAL_STOCK_VENDOR ? 'AED' : 'USD'} ${i.price.toFixed(2)}`
+        ...catalogItemsRef.current.map((i) => `${truncate(i.description || i.wic)} — ${i.availability}`),
+        ...pricedItemsRef.current.map((i) =>
+          typeof i.stock === 'number'
+            ? `${truncate(i.description || i.partNumber)} — In Stock`
+            : `${truncate(i.description || i.partNumber)} — ${i.availability}`
         ),
       ];
       if (pool.length > 0) {
