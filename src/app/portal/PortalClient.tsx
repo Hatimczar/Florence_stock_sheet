@@ -38,8 +38,8 @@ interface StockToast {
 const WHATSAPP_NUMBER = '971525348090';
 const STOCK_POLL_INTERVAL_MS = 15_000;
 const TOAST_LIFETIME_MS = 6_000;
-const SPOTLIGHT_MIN_INTERVAL_MS = 7_000;
-const SPOTLIGHT_MAX_INTERVAL_MS = 16_000;
+const SPOTLIGHT_MIN_INTERVAL_MS = 16_000;
+const SPOTLIGHT_MAX_INTERVAL_MS = 37_000;
 
 const AVAIL_CLASS: Record<string, string> = {
   Available: 'avail-yes',
