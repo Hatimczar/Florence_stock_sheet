@@ -198,10 +198,25 @@ async function getOriginAcousticsPricedItems(
   return results;
 }
 
+/**
+ * getIt4ProfitPricedItems scans the full IT4Profit catalog (thousands of items) to build this
+ * result, which is expensive to redo on every ~15s portal poll — especially for customers who've
+ * been given a markup on most/all vendors, where the scan can't be narrowed down by vendor. The
+ * priced result only actually changes when an admin re-syncs the catalog or edits this customer's
+ * markups, so it's safe to reuse a short-lived per-customer copy instead of recomputing every poll.
+ */
+const pricedItemsCache = new Map<string, { data: VendorPricedItem[]; expiresAt: number }>();
+const PRICED_ITEMS_CACHE_TTL_MS = 45_000;
+
 export async function getVendorPricedItemsForCustomer(
-  customer: Pick<Customer, 'enabledBrands' | 'vendorMarkups'>
+  customer: Pick<Customer, 'id' | 'enabledBrands' | 'vendorMarkups'>
 ): Promise<VendorPricedItem[]> {
   if (customer.vendorMarkups.length === 0) return [];
+
+  const now = Date.now();
+  const cached = pricedItemsCache.get(customer.id);
+  if (cached && cached.expiresAt > now) return cached.data;
+
   const enabled = new Set(customer.enabledBrands);
   const markupByVendor = new Map(customer.vendorMarkups.map((m) => [m.vendor, m]));
 
@@ -209,5 +224,7 @@ export async function getVendorPricedItemsForCustomer(
     getIt4ProfitPricedItems(enabled, markupByVendor),
     getOriginAcousticsPricedItems(enabled, markupByVendor),
   ]);
-  return [...it4profitItems, ...originAcousticsItems];
+  const result = [...it4profitItems, ...originAcousticsItems];
+  pricedItemsCache.set(customer.id, { data: result, expiresAt: now + PRICED_ITEMS_CACHE_TTL_MS });
+  return result;
 }
