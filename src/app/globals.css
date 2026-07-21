@@ -593,6 +593,13 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.desc-cell-wrap {
+  max-width: 360px;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
 .stock-cell {
   font-weight: 600;
 }

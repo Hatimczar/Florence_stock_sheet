@@ -474,7 +474,7 @@ export default function PortalClient() {
                                 </button>
                               </td>
                               <td className="mono">{item.partNumber}</td>
-                              <td className="desc-cell">{item.description || '—'}</td>
+                              <td className="desc-cell desc-cell-wrap">{item.description || '—'}</td>
                               <td>{item.category}</td>
                               <td className="num mono stock-cell">
                                 {typeof item.stock === 'number' ? (
