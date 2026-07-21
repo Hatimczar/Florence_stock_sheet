@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { FlorenceLogo } from './FlorenceLogo';
 
@@ -13,8 +13,16 @@ interface CustomerInfo {
   pricedVendorBrands: string[];
 }
 
+// Set on this device the first time someone successfully signs in or signs up, so a shared
+// portal link defaults to Sign Up for new prospects but Sign In for people who've used it before.
+const RETURNING_CUSTOMER_KEY = 'florence_returning_customer';
+
 export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: CustomerInfo) => void }) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+
+  useEffect(() => {
+    if (localStorage.getItem(RETURNING_CUSTOMER_KEY)) setMode('signin');
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,6 +66,7 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
         setError(data.error || 'Invalid email or password');
         return;
       }
+      localStorage.setItem(RETURNING_CUSTOMER_KEY, '1');
       onLoggedIn({
         name: data.name!,
         email: data.email!,
@@ -95,6 +104,7 @@ export function PortalAuthForm({ onLoggedIn }: { onLoggedIn: (customer: Customer
         setError(data.error || 'Could not create your account');
         return;
       }
+      localStorage.setItem(RETURNING_CUSTOMER_KEY, '1');
       setSuccess('Account created! We’ll review it and let you know once you’re approved. You can try signing in after that.');
       setName('');
       setCompanyName('');
