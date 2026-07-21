@@ -436,7 +436,7 @@ export default function PortalClient() {
                   </div>
                 </div>
 
-                <div className="table-card">
+                <div className="table-card priced-table-desktop">
                   <div className="table-scroll">
                     <table className="apple-table">
                       <thead>
@@ -497,6 +497,56 @@ export default function PortalClient() {
                     </table>
                   </div>
                 </div>
+
+                {loadingPriced ? (
+                  <div className="ios-group priced-table-mobile" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' }}>
+                    Loading…
+                  </div>
+                ) : pricedFiltered.length === 0 ? (
+                  <div className="ios-group priced-table-mobile" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' }}>
+                    {brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
+                  </div>
+                ) : (
+                  <div className="ios-group priced-table-mobile">
+                    {pricedFiltered.map((item) => (
+                      <div key={item.partNumber} className="ios-row" style={{ alignItems: 'flex-start' }}>
+                        <button
+                          className={`select-dot ${pricedSelected.has(item.partNumber) ? 'checked' : ''}`}
+                          onClick={() => togglePricedSelected(item.partNumber)}
+                        >
+                          <Check />
+                        </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                            <span className="row-title mono" style={{ fontSize: 13 }}>
+                              {item.partNumber}
+                            </span>
+                            <span className="mono price-cell" style={{ flexShrink: 0, fontSize: 13 }}>
+                              {isAppleTab ? 'AED' : 'USD'} {item.price.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="row-sub">{item.description || '—'}</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 5 }}>
+                            <span className="pill" style={{ background: 'var(--fill)' }}>
+                              {item.category}
+                            </span>
+                            {typeof item.stock === 'number' ? (
+                              item.stock > 0 ? (
+                                <span className="pill" style={{ background: 'var(--fill)' }}>
+                                  {item.stock} in stock
+                                </span>
+                              ) : (
+                                <span className="pill pill-red">Out of Stock</span>
+                              )
+                            ) : (
+                              <span className={`pill ${AVAIL_CLASS[item.availability ?? ''] ?? ''}`}>{item.availability}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <>
