@@ -15,10 +15,11 @@ export interface PartLookupResult {
 
 /**
  * Looks up a part's cost across every source Florence maintains, for the Price Calculator's
- * auto-fetch-by-Part-Number feature. Checked in this order: Apple's own manual price list, then
- * Origin Acoustics (both AED, entered directly by the admin), then the IT4Profit vendor feed
- * (USD, the "myPrice" field — same cost shown as "Cost (USD)" in the admin Asbis Brands table).
- * Returns the first match; a part number is assumed unique within each source.
+ * auto-fetch-by-Part-Number feature. Checked in this order: Apple's own manual price list (AED),
+ * then Origin Acoustics (USD — its uploaded price column is literally "Exworks Price in USD"),
+ * then the IT4Profit vendor feed (USD, the "myPrice" field — same cost shown as "Cost (USD)" in
+ * the admin Asbis Brands table). Returns the first match; a part number is assumed unique within
+ * each source.
  */
 export async function lookupPartCost(rawPartNumber: string): Promise<PartLookupResult> {
   const target = normalizePartNumber(rawPartNumber);
@@ -37,7 +38,7 @@ export async function lookupPartCost(rawPartNumber: string): Promise<PartLookupR
     const merged = mergeStockAndPrice(oaStock.file.rows, oaStock.mapping, oaPrice.file.rows, oaPrice.mapping);
     const row = merged.rows.find((r) => r.partNumber === target);
     if (row && row.price !== null) {
-      return { found: true, partNumber: target, description: row.description, cost: row.price, currency: 'AED', source: 'origin-acoustics' };
+      return { found: true, partNumber: target, description: row.description, cost: row.price, currency: 'USD', source: 'origin-acoustics' };
     }
   }
 
