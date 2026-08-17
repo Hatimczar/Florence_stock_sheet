@@ -1294,6 +1294,12 @@ body {
   gap: 10px;
   overflow-x: auto;
   padding: 0 28px 36px;
+  /* Direct flex child of <body> (flex-col) with auto left/right margins for centering —
+     an auto margin on a column flex item's cross axis disables the browser's default
+     stretch-to-container sizing, so without an explicit width the rail sizes to its
+     content (all chips laid out in one row) and blows out the page width on mobile
+     instead of scrolling internally. */
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
   scrollbar-width: none;
@@ -1507,6 +1513,23 @@ body {
   letter-spacing: 0.02em;
   padding: 4px 9px;
   border-radius: 100px;
+  /* Product photos vary from near-white to fully transparent behind this badge, and the shared
+     avail-* colors are a low-opacity tint meant for solid card backgrounds elsewhere in the app —
+     over a white product shot that tint reads as barely-there. Override to a near-opaque color
+     plus a soft shadow so the badge stays legible over any photo. */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+.pc-avail-pill.avail-yes {
+  background: rgba(40, 197, 94, 0.95);
+  color: #062712;
+}
+.pc-avail-pill.avail-ondemand {
+  background: rgba(255, 159, 10, 0.95);
+  color: #2b1400;
+}
+.pc-avail-pill.avail-limited {
+  background: rgba(255, 69, 58, 0.95);
+  color: #2b0400;
 }
 .pc-card-body {
   padding: 13px 14px 15px;
