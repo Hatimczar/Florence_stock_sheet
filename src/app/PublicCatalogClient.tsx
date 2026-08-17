@@ -18,16 +18,6 @@ interface PublicCatalogItem {
   image: string | null;
 }
 
-interface PricedItem {
-  partNumber: string;
-  price: number;
-}
-
-interface CustomerInfo {
-  name: string;
-  companyName: string;
-}
-
 const AVAIL_CLASS: Record<string, string> = {
   Available: 'avail-yes',
   'On Demand': 'avail-ondemand',
@@ -47,8 +37,6 @@ function handleImgLoad(e: SyntheticEvent<HTMLImageElement>, onBroken: () => void
 export default function PublicCatalogClient() {
   const [items, setItems] = useState<PublicCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customer, setCustomer] = useState<CustomerInfo | null>(null);
-  const [pricedByPart, setPricedByPart] = useState<Map<string, number>>(new Map());
 
   const [search, setSearch] = useState('');
   const [activeGroup, setActiveGroup] = useState<string>('all');
@@ -73,31 +61,6 @@ export default function PublicCatalogClient() {
       clearInterval(interval);
     };
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      const res = await fetch('/api/customer/me');
-      if (!res.ok) return;
-      const data = (await res.json()) as { customer: CustomerInfo | null };
-      setCustomer(data.customer);
-    })();
-  }, []);
-
-  // /api/customer/browse already returns every item this specific customer has pricing on — Apple via
-  // categoryMarkups, any other vendor (Logitech, Origin Acoustics, ...) via vendorMarkups — so no vendor
-  // logic needs replicating here; just overlay whatever it returns.
-  useEffect(() => {
-    if (!customer) {
-      setPricedByPart(new Map());
-      return;
-    }
-    (async () => {
-      const res = await fetch('/api/customer/browse');
-      if (!res.ok) return;
-      const data = (await res.json()) as { items: PricedItem[] };
-      setPricedByPart(new Map(data.items.map((p) => [p.partNumber, p.price])));
-    })();
-  }, [customer]);
 
   const groupCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -158,15 +121,9 @@ export default function PublicCatalogClient() {
           />
         </div>
         <div className="pc-nav-right">
-          {customer ? (
-            <Link href="/portal" className="pc-nav-icon-btn">
-              {customer.companyName || customer.name}
-            </Link>
-          ) : (
-            <Link href="/portal" className="pc-pill-btn">
-              <LogIn size={13} /> Sign in
-            </Link>
-          )}
+          <Link href="/portal" className="pc-pill-btn">
+            <LogIn size={13} /> Sign in
+          </Link>
         </div>
       </nav>
 
@@ -183,13 +140,11 @@ export default function PublicCatalogClient() {
         </p>
         <div className="pc-hero-ctas">
           <Link href="/portal" className="pc-cta-primary">
-            {customer ? 'Go to my portal' : 'Request trade account'} →
+            Request trade account →
           </Link>
-          {!customer && (
-            <Link href="/portal" className="pc-cta-secondary">
-              I have an account
-            </Link>
-          )}
+          <Link href="/portal" className="pc-cta-secondary">
+            I have an account
+          </Link>
         </div>
         <div className="pc-hero-wa-row">
           <a
@@ -253,11 +208,9 @@ export default function PublicCatalogClient() {
                 <a className="pc-cta-primary" href={waLink(`Hi, I'm interested in ${spotlight.description} (${spotlight.wic})`)} target="_blank" rel="noreferrer">
                   Ask on WhatsApp
                 </a>
-                {!customer && (
-                  <Link href="/portal" className="pc-cta-ghost">
-                    Unlock trade price
-                  </Link>
-                )}
+                <Link href="/portal" className="pc-cta-ghost">
+                  Unlock trade price
+                </Link>
               </div>
             </div>
             <div className="pc-spotlight-img-wrap">
@@ -289,7 +242,6 @@ export default function PublicCatalogClient() {
 
         <div className="pc-grid">
           {visibleItems.map((item) => {
-            const price = pricedByPart.get(item.wic);
             return (
               <div className="pc-card" key={`${item.vendor}-${item.wic}`}>
                 <div className="pc-card-img">
@@ -313,25 +265,9 @@ export default function PublicCatalogClient() {
                   <div className="pc-card-name">{item.description}</div>
                   <div className="pc-card-wic">{item.wic}</div>
                   <div className="pc-card-foot">
-                    {price !== undefined ? (
-                      <div className="pc-price-unlocked">
-                        <span className="cur">AED</span>
-                        {price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </div>
-                    ) : !customer ? (
-                      <Link href="/portal" className="pc-price-locked">
-                        <Lock size={11} /> Sign in for price
-                      </Link>
-                    ) : (
-                      <a
-                        className="pc-ask-btn"
-                        href={waLink(`Hi, I'm interested in ${item.description} (${item.wic})`)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <MessageCircle size={12} /> Ask for pricing
-                      </a>
-                    )}
+                    <Link href="/portal" className="pc-price-locked">
+                      <Lock size={11} /> Sign in for price
+                    </Link>
                   </div>
                 </div>
               </div>

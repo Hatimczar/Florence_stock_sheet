@@ -13,6 +13,7 @@ interface PricedItem {
   stock?: number;
   availability?: string;
   price: number;
+  image: string | null;
 }
 
 // Priced items: Apple (real stock, categoryMarkups) when its prices aren't turned off for this customer,

@@ -2,7 +2,7 @@ import { getStoredList } from './kv';
 import { mergeStockAndPrice } from './merge';
 import { normalizePartNumber } from './parseFile';
 import { Customer, CategoryMarkup, VendorMarkup } from './customers';
-import { getCatalog, CUSTOMER_AVAIL_LABEL, ORIGIN_ACOUSTICS_VENDOR } from './catalog';
+import { getCatalog, CUSTOMER_AVAIL_LABEL, ORIGIN_ACOUSTICS_VENDOR, upsizeIt4ProfitImage } from './catalog';
 import { getAppleImage } from './appleImages';
 
 export interface CustomerLookupResult {
@@ -11,6 +11,7 @@ export interface CustomerLookupResult {
   category: string;
   stock: number;
   price: number;
+  image: string | null;
 }
 
 export function applyMarkup(cost: number, markup: Pick<CategoryMarkup, 'markupType' | 'markupValue'>): number {
@@ -41,6 +42,7 @@ async function getVisiblePartsForCustomer(customer: Pick<Customer, 'categoryMark
       category: row.category,
       stock: row.stock,
       price: applyMarkup(row.price, markup),
+      image: getAppleImage(row.partNumber, row.category, row.description),
     });
   }
 
@@ -130,6 +132,7 @@ export interface VendorPricedItem {
   vendor: string;
   availability: string;
   price: number;
+  image: string | null;
 }
 
 /**
@@ -164,6 +167,7 @@ async function getIt4ProfitPricedItems(
       vendor: item.vendor,
       availability: availLabel,
       price: applyMarkup(item.myPrice, markup),
+      image: item.image ? upsizeIt4ProfitImage(item.image, 500) : null,
     });
   }
   return results;
@@ -197,6 +201,7 @@ async function getOriginAcousticsPricedItems(
       vendor: ORIGIN_ACOUSTICS_VENDOR,
       availability: 'Available',
       price: applyMarkup(row.price, markup),
+      image: null,
     });
   }
   return results;

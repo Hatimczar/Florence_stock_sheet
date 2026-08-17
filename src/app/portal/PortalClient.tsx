@@ -28,6 +28,7 @@ interface PricedItem {
   stock?: number;
   availability?: string;
   price: number;
+  image: string | null;
 }
 
 interface StockToast {
@@ -442,6 +443,7 @@ export default function PortalClient() {
                       <thead>
                         <tr>
                           <th style={{ width: 36 }}></th>
+                          <th style={{ width: 48 }}></th>
                           <th>Part Number</th>
                           <th>Description</th>
                           <th>Category</th>
@@ -452,13 +454,13 @@ export default function PortalClient() {
                       <tbody>
                         {loadingPriced ? (
                           <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                            <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
                               Loading…
                             </td>
                           </tr>
                         ) : pricedFiltered.length === 0 ? (
                           <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
+                            <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
                               {brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
                             </td>
                           </tr>
@@ -472,6 +474,9 @@ export default function PortalClient() {
                                 >
                                   <Check />
                                 </button>
+                              </td>
+                              <td>
+                                <ProductThumb src={item.image ?? ''} size={32} radius={7} />
                               </td>
                               <td className="mono">{item.partNumber}</td>
                               <td className="desc-cell desc-cell-wrap">{item.description || '—'}</td>
@@ -516,6 +521,7 @@ export default function PortalClient() {
                         >
                           <Check />
                         </button>
+                        <ProductThumb src={item.image ?? ''} size={36} radius={8} style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
                             <span className="row-title mono" style={{ fontSize: 13 }}>
