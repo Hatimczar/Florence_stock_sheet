@@ -1609,6 +1609,75 @@ body {
   font-size: 12px;
 }
 
+.pc-home-search {
+  max-width: 1180px;
+  margin: 20px auto 0;
+}
+
+.pc-carousel {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 28px 40px;
+}
+.pc-carousel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pc-carousel-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  /* Same fix as .pc-cat-rail: this row has centering ancestors up the flex chain in some layouts, and
+     without an explicit width a horizontally-scrolling flex row sizes itself to its content instead of
+     the viewport. */
+  width: 100%;
+  min-width: 0;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.pc-carousel-row::-webkit-scrollbar {
+  display: none;
+}
+.pc-carousel-slide {
+  flex: 0 0 200px;
+  scroll-snap-align: start;
+}
+.pc-carousel-slide .pc-card {
+  height: 100%;
+}
+@media (max-width: 520px) {
+  .pc-carousel-slide {
+    flex-basis: 160px;
+  }
+}
+
+.pc-card-select {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+/* select-dot's default ring assumes a solid card background — over a product photo (which can be
+   anywhere from white to transparent) a bare 1.5px outline can vanish. Give it its own translucent
+   dark backdrop so it stays visible regardless of what's behind it. */
+.pc-card-select.select-dot::before {
+  background: rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+.pc-card-select.select-dot.checked::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .pc-hero-wa-row {
   display: flex;
   justify-content: center;

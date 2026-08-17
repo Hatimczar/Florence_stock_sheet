@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Check, Menu } from 'lucide-react';
+import { LogOut, Search, PackageSearch, RefreshCw, MessageCircle, Home, Menu } from 'lucide-react';
 import { PortalAuthForm } from '@/components/PortalAuthForm';
 import { BrandLogo } from '@/components/BrandLogo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { FlorenceLogo } from '@/components/FlorenceLogo';
-import { ProductThumb } from '@/components/ProductThumb';
+import { ProductCard } from '@/components/ProductCard';
+import { CatalogHome } from '@/components/CatalogHome';
 import { CustomerCatalogItem } from '@/lib/catalogApi';
 
 const MANUAL_STOCK_VENDOR = 'Apple';
+const HOME_VIEW = 'home' as const;
 
 interface CustomerInfo {
   name: string;
@@ -42,17 +44,12 @@ const TOAST_LIFETIME_MS = 6_000;
 const SPOTLIGHT_MIN_INTERVAL_MS = 16_000;
 const SPOTLIGHT_MAX_INTERVAL_MS = 37_000;
 
-const AVAIL_CLASS: Record<string, string> = {
-  Available: 'avail-yes',
-  'On Demand': 'avail-ondemand',
-  Limited: 'avail-limited',
-};
-
 export default function PortalClient() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
-  const [activeBrand, setActiveBrand] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<string>(HOME_VIEW);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const activeBrand = activeView === HOME_VIEW ? null : activeView;
 
   useEffect(() => {
     setSidebarOpen(window.innerWidth > 820);
@@ -90,7 +87,6 @@ export default function PortalClient() {
         const res = await fetch('/api/customer/me', { cache: 'no-store' });
         const data = (res.ok ? await res.json() : { customer: null }) as { customer: CustomerInfo | null };
         setCustomer(data.customer);
-        if (data.customer) setActiveBrand(data.customer.enabledBrands[0] ?? null);
       } finally {
         setCheckingSession(false);
       }
@@ -234,6 +230,15 @@ export default function PortalClient() {
     });
   };
 
+  // Selection sets are keyed by wic/partNumber, which aren't unique across brands — without this,
+  // switching brands could leave a stale "Send N" button referencing another brand's items.
+  const switchView = (view: string) => {
+    setActiveView(view);
+    setCatalogSelected(new Set());
+    setPricedSelected(new Set());
+    if (window.innerWidth <= 820) setSidebarOpen(false);
+  };
+
   const togglePricedSelected = (partNumber: string) => {
     setPricedSelected((prev) => {
       const next = new Set(prev);
@@ -325,14 +330,7 @@ export default function PortalClient() {
   }
 
   if (!customer) {
-    return (
-      <PortalAuthForm
-        onLoggedIn={(c) => {
-          setCustomer(c);
-          setActiveBrand(c.enabledBrands[0] ?? null);
-        }}
-      />
-    );
+    return <PortalAuthForm onLoggedIn={(c) => setCustomer(c)} />;
   }
 
   return (
@@ -348,15 +346,21 @@ export default function PortalClient() {
             <span className="name">Florence</span>
           </div>
 
+          <button
+            onClick={() => switchView(HOME_VIEW)}
+            className={`mac-nav-item ${activeView === HOME_VIEW ? 'active' : ''}`}
+          >
+            <Home size={15} />
+            Home
+            <span className="sp" />
+          </button>
+
           <div className="mac-nav-section">Brands</div>
           {customer.enabledBrands.map((brand) => (
             <button
               key={brand}
-              onClick={() => {
-                setActiveBrand(brand);
-                if (window.innerWidth <= 820) setSidebarOpen(false);
-              }}
-              className={`mac-nav-item ${activeBrand === brand ? 'active' : ''}`}
+              onClick={() => switchView(brand)}
+              className={`mac-nav-item ${activeView === brand ? 'active' : ''}`}
             >
               <BrandLogo vendor={brand} size={15} />
               {brand}
@@ -382,7 +386,7 @@ export default function PortalClient() {
               <button className="menu-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label="Toggle sidebar">
                 <Menu />
               </button>
-              <h2>{activeBrand ?? 'Client Portal'}</h2>
+              <h2>{activeView === HOME_VIEW ? 'Home' : activeBrand}</h2>
             </div>
             <div className="toolbar-actions">
               <ThemeToggle />
@@ -392,8 +396,10 @@ export default function PortalClient() {
             </div>
           </div>
 
-          <div className="mac-scroll">
-            {customer.enabledBrands.length === 0 ? (
+          <div className="mac-scroll" style={activeView === HOME_VIEW ? { padding: 0 } : undefined}>
+            {activeView === HOME_VIEW ? (
+              <CatalogHome priced />
+            ) : customer.enabledBrands.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '48px 0', textAlign: 'center', color: 'var(--muted)' }}>
                 <PackageSearch size={24} />
                 No brands are enabled on your account yet. Ask Florence to enable at least one brand.
@@ -437,119 +443,31 @@ export default function PortalClient() {
                   </div>
                 </div>
 
-                <div className="table-card priced-table-desktop">
-                  <div className="table-scroll">
-                    <table className="apple-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: 36 }}></th>
-                          <th style={{ width: 48 }}></th>
-                          <th>Part Number</th>
-                          <th>Description</th>
-                          <th>Category</th>
-                          <th className="num">{isAppleTab ? 'Stock' : 'Availability'}</th>
-                          <th className="num">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {loadingPriced ? (
-                          <tr>
-                            <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
-                              Loading…
-                            </td>
-                          </tr>
-                        ) : pricedFiltered.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} style={{ textAlign: 'center', padding: '32px 14px', color: 'var(--muted)' }}>
-                              {brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
-                            </td>
-                          </tr>
-                        ) : (
-                          pricedFiltered.map((item) => (
-                            <tr key={item.partNumber}>
-                              <td>
-                                <button
-                                  className={`select-dot ${pricedSelected.has(item.partNumber) ? 'checked' : ''}`}
-                                  onClick={() => togglePricedSelected(item.partNumber)}
-                                >
-                                  <Check />
-                                </button>
-                              </td>
-                              <td>
-                                <ProductThumb src={item.image ?? ''} size={32} radius={7} />
-                              </td>
-                              <td className="mono">{item.partNumber}</td>
-                              <td className="desc-cell desc-cell-wrap">{item.description || '—'}</td>
-                              <td>{item.category}</td>
-                              <td className="num mono stock-cell">
-                                {typeof item.stock === 'number' ? (
-                                  item.stock > 0 ? (
-                                    item.stock
-                                  ) : (
-                                    <span className="pill pill-red">Out of Stock</span>
-                                  )
-                                ) : (
-                                  <span className={`pill ${AVAIL_CLASS[item.availability ?? ''] ?? ''}`}>{item.availability}</span>
-                                )}
-                              </td>
-                              <td className="num mono price-cell">
-                                {isAppleTab ? 'AED' : 'USD'} {item.price.toFixed(2)}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
                 {loadingPriced ? (
-                  <div className="ios-group priced-table-mobile" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' }}>
-                    Loading…
-                  </div>
+                  <div className="pc-empty">Loading…</div>
                 ) : pricedFiltered.length === 0 ? (
-                  <div className="ios-group priced-table-mobile" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' }}>
-                    {brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}
-                  </div>
+                  <div className="pc-empty">{brandPricedItems.length === 0 ? 'Nothing available yet — check back soon.' : 'No matches for this search.'}</div>
                 ) : (
-                  <div className="ios-group priced-table-mobile">
+                  <div className="pc-grid">
                     {pricedFiltered.map((item) => (
-                      <div key={item.partNumber} className="ios-row" style={{ alignItems: 'flex-start' }}>
-                        <button
-                          className={`select-dot ${pricedSelected.has(item.partNumber) ? 'checked' : ''}`}
-                          onClick={() => togglePricedSelected(item.partNumber)}
-                        >
-                          <Check />
-                        </button>
-                        <ProductThumb src={item.image ?? ''} size={36} radius={8} style={{ flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                            <span className="row-title mono" style={{ fontSize: 13 }}>
-                              {item.partNumber}
-                            </span>
-                            <span className="mono price-cell" style={{ flexShrink: 0, fontSize: 13 }}>
-                              {isAppleTab ? 'AED' : 'USD'} {item.price.toFixed(2)}
-                            </span>
+                      <ProductCard
+                        key={item.partNumber}
+                        vendor={item.vendor}
+                        description={item.description}
+                        wic={item.partNumber}
+                        availability={typeof item.stock === 'number' ? (item.stock > 0 ? 'Available' : 'Limited') : item.availability ?? ''}
+                        image={item.image}
+                        imageBroken={false}
+                        onImageBroken={() => {}}
+                        selected={pricedSelected.has(item.partNumber)}
+                        onToggleSelect={() => togglePricedSelected(item.partNumber)}
+                        foot={
+                          <div className="pc-price-unlocked">
+                            <span className="cur">{isAppleTab ? 'AED' : 'USD'}</span>
+                            {item.price.toFixed(2)}
                           </div>
-                          <div className="row-sub">{item.description || '—'}</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 5 }}>
-                            <span className="pill" style={{ background: 'var(--fill)' }}>
-                              {item.category}
-                            </span>
-                            {typeof item.stock === 'number' ? (
-                              item.stock > 0 ? (
-                                <span className="pill" style={{ background: 'var(--fill)' }}>
-                                  {item.stock} in stock
-                                </span>
-                              ) : (
-                                <span className="pill pill-red">Out of Stock</span>
-                              )
-                            ) : (
-                              <span className={`pill ${AVAIL_CLASS[item.availability ?? ''] ?? ''}`}>{item.availability}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        }
+                      />
                     ))}
                   </div>
                 )}
@@ -608,28 +526,21 @@ export default function PortalClient() {
                   catalogGroups.map(([group, groupItems]) => (
                     <div key={group}>
                       <div className="section-header">{group}</div>
-                      <div className="ios-group">
+                      <div className="pc-grid">
                         {groupItems.map((item) => (
-                          <div key={item.wic} className="ios-row" style={{ alignItems: 'flex-start' }}>
-                            <button
-                              className={`select-dot ${catalogSelected.has(item.wic) ? 'checked' : ''}`}
-                              onClick={() => toggleCatalogSelected(item.wic)}
-                            >
-                              <Check />
-                            </button>
-                            <ProductThumb src={item.image} size={36} radius={8} style={{ flexShrink: 0 }} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="row-title mono" style={{ fontSize: 13 }}>
-                                {item.wic}
-                              </div>
-                              <div className="row-sub" style={{ whiteSpace: 'normal' }}>
-                                {item.description || '—'}
-                              </div>
-                            </div>
-                            <span className={`pill ${AVAIL_CLASS[item.availability] ?? ''}`} style={{ marginTop: 2 }}>
-                              {item.availability}
-                            </span>
-                          </div>
+                          <ProductCard
+                            key={item.wic}
+                            vendor={item.vendor}
+                            description={item.description}
+                            wic={item.wic}
+                            availability={item.availability}
+                            image={item.image}
+                            imageBroken={false}
+                            onImageBroken={() => {}}
+                            selected={catalogSelected.has(item.wic)}
+                            onToggleSelect={() => toggleCatalogSelected(item.wic)}
+                            foot={<span style={{ fontSize: 11.5, color: 'var(--muted)' }}>No pricing shown here</span>}
+                          />
                         ))}
                       </div>
                     </div>
