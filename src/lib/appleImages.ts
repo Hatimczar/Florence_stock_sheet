@@ -18,6 +18,8 @@ const CATEGORY_FALLBACKS: { slug: string; keywords: string[] }[] = [
   { slug: 'ipad', keywords: ['ipad'] },
   { slug: 'iphone', keywords: ['iphone'] },
   { slug: 'watch', keywords: ['watch'] },
+  { slug: 'airpods-max', keywords: ['airpods max'] },
+  { slug: 'airpods-pro', keywords: ['airpods pro'] },
   { slug: 'airpods', keywords: ['airpods'] },
   { slug: 'airtag', keywords: ['airtag'] },
   { slug: 'giftcard', keywords: ['gift card', 'giftcard'] },
