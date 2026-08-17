@@ -10,14 +10,14 @@ import { FlorenceLogo } from './FlorenceLogo';
 type AdminNavKey = 'stock' | 'catalog' | 'customers';
 
 const NAV_ITEMS: { key: AdminNavKey; href: string; label: string; icon: typeof Package }[] = [
-  { key: 'stock', href: '/', label: 'Stock Sheet', icon: Package },
-  { key: 'catalog', href: '/catalog', label: 'Asbis Brands', icon: PackageSearch },
-  { key: 'customers', href: '/customers', label: 'Customers', icon: Users },
+  { key: 'stock', href: '/admin', label: 'Stock Sheet', icon: Package },
+  { key: 'catalog', href: '/admin/catalog', label: 'Asbis Brands', icon: PackageSearch },
+  { key: 'customers', href: '/admin/customers', label: 'Customers', icon: Users },
 ];
 
 async function handleLogout() {
   await fetch('/api/admin-auth/logout', { method: 'POST' });
-  window.location.href = '/';
+  window.location.href = '/admin';
 }
 
 /** Clean, minimal app shell inspired by the V3 design demo — glass sidebar + glass toolbar. */

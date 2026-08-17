@@ -3,6 +3,7 @@ import { mergeStockAndPrice } from './merge';
 import { normalizePartNumber } from './parseFile';
 import { Customer, CategoryMarkup, VendorMarkup } from './customers';
 import { getCatalog, CUSTOMER_AVAIL_LABEL, ORIGIN_ACOUSTICS_VENDOR } from './catalog';
+import { getAppleImage } from './appleImages';
 
 export interface CustomerLookupResult {
   partNumber: string;
@@ -71,6 +72,7 @@ export interface ManualStockCatalogItem {
   description: string;
   group: string;
   availability: 'Available';
+  image: string | null;
 }
 
 /**
@@ -95,6 +97,7 @@ export async function getManualStockCatalogItems(): Promise<ManualStockCatalogIt
       description: row.description,
       group: row.category,
       availability: 'Available' as const,
+      image: getAppleImage(row.partNumber, row.category, row.description),
     }));
 }
 
@@ -116,6 +119,7 @@ export async function getOriginAcousticsCatalogItems(): Promise<ManualStockCatal
       description: row.description,
       group: row.category,
       availability: 'Available' as const,
+      image: null,
     }));
 }
 

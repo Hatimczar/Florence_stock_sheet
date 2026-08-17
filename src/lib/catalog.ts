@@ -17,6 +17,17 @@ export interface StoredCatalog {
   syncedAt: string;
 }
 
+/**
+ * The feed's SMALL_IMAGE URLs default to a 60x60 crop (content.it4profit.com/pimg/s/resize/60x60x.../file.png).
+ * The same CDN serves larger crops of the identical asset if the leading WxH is swapped out, so callers needing
+ * a real product photo (vs. a thumbnail) should upsize through this rather than using the raw feed URL.
+ */
+export function upsizeIt4ProfitImage(url: string, size = 500): string {
+  if (/resize\/\d+x\d+x/.test(url)) return url.replace(/resize\/\d+x\d+x/, `resize/${size}x${size}x`);
+  if (/RESIZE=\d+x\d+x/i.test(url)) return url.replace(/RESIZE=\d+x\d+x/i, `RESIZE=${size}x${size}x`);
+  return url;
+}
+
 const CATALOG_KEY = 'it4profit_catalog';
 
 /** The manually-uploaded Stock/Price sheet (admin's own inventory) is exposed to customers as this brand. */

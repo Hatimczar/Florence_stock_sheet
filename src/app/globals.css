@@ -1054,3 +1054,553 @@ body {
   }
 }
 
+/* ============================================================
+   Public storefront (/) — photo-grid catalog, gated pricing.
+   Reuses the tokens above; does not introduce new color meaning.
+   ============================================================ */
+
+.utility-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12.5px;
+  font-weight: 590;
+  letter-spacing: 0.01em;
+}
+.utility-bar .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--profit);
+  box-shadow: 0 0 0 3px var(--profit-bg);
+}
+
+.pc-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 28px;
+  background: var(--glass-fill);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-bottom: 1px solid var(--glass-border);
+}
+.pc-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pc-brand-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 2px 8px;
+}
+.pc-nav-mid {
+  flex: 1;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 9px 16px;
+  color: var(--muted);
+}
+.pc-nav-mid input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--foreground);
+}
+.pc-nav-mid input::placeholder {
+  color: var(--muted);
+}
+.pc-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pc-nav-icon-btn {
+  font-size: 13.5px;
+  font-weight: 590;
+  color: var(--foreground);
+}
+.pc-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 100px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+@media (max-width: 860px) {
+  /* No room for the search bar on the same row as the logo + sign-in — wrap it onto its own full-width
+     row underneath instead of hiding it, so mobile visitors (most of them) can still search. */
+  .pc-nav {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .pc-nav-mid {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+.pc-hero {
+  position: relative;
+  padding: 64px 28px 48px;
+  max-width: 1180px;
+  margin: 0 auto;
+  text-align: center;
+}
+.pc-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  background: var(--accent-tint, rgba(0, 122, 255, 0.1));
+  border-radius: 100px;
+  padding: 6px 14px;
+  margin-bottom: 22px;
+}
+.pc-hero-title {
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 1.08;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  margin: 0 auto 18px;
+  max-width: 780px;
+  text-wrap: balance;
+}
+.pc-hero-title em {
+  font-style: normal;
+  color: var(--accent);
+}
+.pc-hero-sub {
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto 30px;
+  text-wrap: balance;
+}
+.pc-hero-ctas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.pc-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  padding: 12px 24px;
+  font-size: 14.5px;
+  font-weight: 630;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 122, 255, 0.28);
+}
+.pc-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 12px 22px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pc-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 100px;
+  padding: 12px 20px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.pc-stat-cell {
+  background: var(--surface);
+  padding: 18px 12px;
+  text-align: center;
+}
+.pc-stat-num {
+  font-size: 21px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+}
+.pc-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-weight: 560;
+}
+@media (max-width: 700px) {
+  .pc-stat-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pc-cat-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 0 28px 36px;
+  max-width: 1180px;
+  margin: 0 auto;
+  scrollbar-width: none;
+  /* Tell the browser this rail only pans horizontally, so a horizontal swipe doesn't get
+     mistaken for the page's vertical scroll (or vice versa) on a touchscreen. */
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+.pc-cat-rail::-webkit-scrollbar {
+  display: none;
+}
+.pc-cat-chip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: 100px;
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 580;
+  cursor: pointer;
+  box-shadow: var(--card-shadow, 0 1px 2px rgba(0, 0, 0, 0.04));
+  white-space: nowrap;
+  /* Without this, a real finger tap on this rail can land as a text-selection gesture (word gets
+     highlighted, tap-select magnifier pops up) instead of a click — the bug reported on mobile. */
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.pc-cat-chip.active {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
+}
+.pc-cat-count {
+  font-size: 11px;
+  color: var(--muted-2, var(--muted));
+  font-variant-numeric: tabular-nums;
+}
+.pc-cat-chip.active .pc-cat-count {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.pc-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 28px 64px;
+}
+.pc-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+}
+.pc-section-title {
+  font-size: 21px;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+}
+.pc-section-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.pc-spotlight {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0b1020, #101a33 55%, #0b1020);
+  color: #fff;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  min-height: 300px;
+  box-shadow: var(--card-shadow, 0 8px 20px rgba(20, 25, 40, 0.1));
+}
+.pc-spotlight-copy {
+  padding: 40px 40px 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.pc-spotlight-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: #8fc0ff;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+.pc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.pc-spotlight h3 {
+  font-size: 27px;
+  font-weight: 720;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  max-width: 380px;
+  text-wrap: balance;
+}
+.pc-spotlight p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+  max-width: 380px;
+  margin: 0 0 22px;
+}
+.pc-spotlight-ctas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pc-spotlight-img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  min-height: 220px;
+}
+.pc-spotlight-img-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  background: radial-gradient(circle, rgba(0, 122, 255, 0.35), transparent 70%);
+  filter: blur(30px);
+}
+.pc-spotlight-img-wrap img {
+  position: relative;
+  z-index: 2;
+  max-width: 78%;
+  max-height: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.5));
+}
+@media (max-width: 780px) {
+  .pc-spotlight {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pc-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.pc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 980px) {
+  .pc-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .pc-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pc-card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--card-shadow, 0 1px 2px rgba(0, 0, 0, 0.04));
+  display: flex;
+  flex-direction: column;
+}
+.pc-card-img {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.pc-card-img img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+:root[data-theme='light'] .pc-card-img img {
+  mix-blend-mode: multiply;
+}
+.pc-avail-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: 0.02em;
+  padding: 4px 9px;
+  border-radius: 100px;
+}
+.pc-card-body {
+  padding: 13px 14px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+.pc-card-vendor {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted-2, var(--muted));
+  text-transform: uppercase;
+}
+.pc-card-name {
+  font-size: 13px;
+  font-weight: 610;
+  line-height: 1.35;
+  min-height: 34px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pc-card-wic {
+  font-size: 10px;
+  color: var(--muted-2, var(--muted));
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  margin-top: 1px;
+}
+.pc-card-foot {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-color);
+}
+.pc-price-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 620;
+  color: var(--muted);
+}
+.pc-price-unlocked {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.pc-price-unlocked .cur {
+  font-size: 10.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.pc-ask-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 620;
+  color: var(--profit);
+}
+
+.pc-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.pc-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 30px 28px 100px;
+  text-align: center;
+  color: var(--muted-2, var(--muted));
+  font-size: 12px;
+}
+
+.pc-hero-wa-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+.pc-wa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 630;
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.28);
+}
+
