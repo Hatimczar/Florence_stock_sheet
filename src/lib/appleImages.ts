@@ -34,7 +34,9 @@ export function getAppleImage(wic: string, category: string, description: string
   const prefix = skuPrefix(wic);
   if (SKU_SET.has(prefix)) return `/apple-images/${prefix}.webp`;
 
-  const haystack = `${category} ${description}`.toLowerCase();
+  // Apple's feed sometimes uses non-breaking spaces (e.g. "AirPods Pro 3") instead of
+  // regular ones, which would silently break multi-word keyword matches below.
+  const haystack = `${category} ${description}`.toLowerCase().replace(/\s+/g, ' ');
   for (const { slug, keywords } of CATEGORY_FALLBACKS) {
     if (keywords.some((k) => haystack.includes(k))) return `/apple-images/category/${slug}.webp`;
   }
